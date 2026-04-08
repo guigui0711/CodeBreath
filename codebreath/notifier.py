@@ -1,41 +1,129 @@
 """
-macOS notification sender using osascript.
-Zero external dependencies — uses only AppleScript via subprocess.
+macOS notification sender for CodeBreath.
+
+Two backends:
+1. Native (preferred) — Swift helper app with UNUserNotificationCenter,
+   alert-style notifications that stay on screen, and Done/Skip action
+   buttons.  User responses are written to a JSON file so the scheduler
+   can log completions.
+2. Fallback — osascript `display notification` (no action buttons, banners
+   auto-dismiss after ~5 s).
+
+The Swift helper lives at ~/.codebreath/CodeBreathNotify.app.  Build it
+with `./swift/build.sh`.  If the helper is not found, the fallback is
+used automatically.
 """
 
+import json
+import os
 import subprocess
-from dataclasses import dataclass
+import tempfile
+from pathlib import Path
 from typing import Optional
 
 
-@dataclass
-class NotificationPayload:
-    """Structured notification content."""
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
 
-    title: str
-    subtitle: str
-    body: str
-    sound: str = "default"
+_CODEBREATH_DIR = Path.home() / ".codebreath"
+_NATIVE_APP = _CODEBREATH_DIR / "CodeBreathNotify.app"
+_NATIVE_BIN = _NATIVE_APP / "Contents" / "MacOS" / "CodeBreathNotify"
+_RESPONSE_DIR = _CODEBREATH_DIR / "responses"
 
 
-def send_notification(
+def _native_available() -> bool:
+    """Check if the native Swift notification helper is built."""
+    return _NATIVE_BIN.is_file()
+
+
+def _ensure_response_dir() -> Path:
+    """Create the response directory if needed."""
+    _RESPONSE_DIR.mkdir(parents=True, exist_ok=True)
+    return _RESPONSE_DIR
+
+
+# ---------------------------------------------------------------------------
+# Native notification (preferred)
+# ---------------------------------------------------------------------------
+
+
+def _send_native(
+    title: str,
+    subtitle: str = "",
+    body: str = "",
+    sound: str = "default",
+    category: str = "",
+    timeout: int = 300,
+) -> Optional[str]:
+    """Send notification via native Swift helper (non-blocking).
+
+    Returns the response file path (caller can poll it later),
+    or None if the native helper is not available.
+    """
+    if not _native_available():
+        return None
+
+    from .i18n import t, get_language
+
+    # Determine button labels
+    lang = get_language()
+    if lang == "zh":
+        done_label = "做了 ✓"
+        skip_label = "跳过"
+    else:
+        done_label = "Done ✓"
+        skip_label = "Skip"
+
+    # Create response file
+    resp_dir = _ensure_response_dir()
+    resp_file = resp_dir / f"{category}_{os.getpid()}_{id(title)}.json"
+
+    try:
+        subprocess.Popen(
+            [
+                "open",
+                "-n",
+                "-g",  # -g = don't bring to foreground
+                str(_NATIVE_APP),
+                "--args",
+                "--title",
+                title,
+                "--subtitle",
+                subtitle,
+                "--body",
+                body,
+                "--done-label",
+                done_label,
+                "--skip-label",
+                skip_label,
+                "--response-file",
+                str(resp_file),
+                "--sound",
+                sound,
+                "--timeout",
+                str(timeout),
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return str(resp_file)
+    except OSError:
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Fallback: osascript notification
+# ---------------------------------------------------------------------------
+
+
+def _send_osascript(
     title: str,
     subtitle: str = "",
     body: str = "",
     sound: str = "default",
 ) -> bool:
-    """Send a macOS system notification via osascript.
-
-    Args:
-        title: Main notification title (e.g., "Eye Care Time")
-        subtitle: Secondary line (e.g., "Close Eyes & Breathe — 20s")
-        body: Detail text (benefit/consequence)
-        sound: Sound name (default, Basso, Blow, Bottle, Frog, etc.)
-
-    Returns:
-        True if notification was sent successfully, False otherwise.
-    """
-    # Escape double quotes for AppleScript string
+    """Send a macOS system notification via osascript (fallback)."""
     title = title.replace('"', '\\"')
     subtitle = subtitle.replace('"', '\\"')
     body = body.replace('"', '\\"')
@@ -58,6 +146,75 @@ def send_notification(
         return False
 
 
+# ---------------------------------------------------------------------------
+# Unified send (tries native first, falls back to osascript)
+# ---------------------------------------------------------------------------
+
+
+def send_notification(
+    title: str,
+    subtitle: str = "",
+    body: str = "",
+    sound: str = "default",
+    category: str = "",
+    timeout: int = 300,
+) -> bool:
+    """Send a macOS notification.
+
+    Tries native Swift helper first (with action buttons), falls back
+    to osascript if the helper is not built.
+
+    Returns True if the notification was sent (by either backend).
+    """
+    resp = _send_native(title, subtitle, body, sound, category, timeout)
+    if resp is not None:
+        return True
+    return _send_osascript(title, subtitle, body, sound)
+
+
+# ---------------------------------------------------------------------------
+# Response file utilities
+# ---------------------------------------------------------------------------
+
+
+def read_response(resp_file: str) -> Optional[str]:
+    """Read and consume a notification response file.
+
+    Returns the action string ("done", "skip", "dismissed", "timeout")
+    or None if file doesn't exist yet or is invalid.
+    """
+    path = Path(resp_file)
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text())
+        path.unlink(missing_ok=True)
+        return data.get("action")
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def cleanup_old_responses(max_age_seconds: int = 600):
+    """Remove response files older than max_age_seconds."""
+    if not _RESPONSE_DIR.is_dir():
+        return
+    import time
+
+    now = time.time()
+    for f in _RESPONSE_DIR.iterdir():
+        if f.suffix == ".json":
+            try:
+                if now - f.stat().st_mtime > max_age_seconds:
+                    f.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+
+# ---------------------------------------------------------------------------
+# High-level senders (used by scheduler)
+# ---------------------------------------------------------------------------
+
+
 def send_health_reminder(
     category: str,
     tip_name: str,
@@ -68,22 +225,12 @@ def send_health_reminder(
 ) -> bool:
     """Send a formatted health reminder notification.
 
-    This is the main entry point for sending reminders.
     The notification shows:
-      - Title: category icon + category name
+      - Title: category icon + category name + tip name
       - Subtitle: what to do
-      - Body: why it helps (truncated to fit notification)
+      - Body: why it helps
 
-    Args:
-        category: One of "eye", "neck", "sedentary", "outdoor"
-        tip_name: Name of the tip/exercise
-        instruction: What to do
-        benefit: Why it helps
-        consequence: What happens if skipped
-        extra_benefit: Additional rotating benefit message
-
-    Returns:
-        True if sent successfully.
+    Returns True if sent successfully.
     """
     icons = {
         "eye": "👁",
@@ -91,41 +238,34 @@ def send_health_reminder(
         "sedentary": "🚶",
         "outdoor": "☀️",
     }
-    labels = {
-        "eye": "Eye Care",
-        "neck": "Neck Exercise",
-        "sedentary": "Move Break",
-        "outdoor": "Go Outside!",
-    }
+
+    from .i18n import t
 
     icon = icons.get(category, "💡")
-    label = labels.get(category, "Health Break")
+    label = t(f"cat.{category}") if category in icons else t("cat.health_break")
 
     title = f"{icon} {label}: {tip_name}"
 
-    # Subtitle: instruction (truncated if too long for notification)
+    # Subtitle: instruction (truncated if too long)
     subtitle = instruction
     if len(subtitle) > 100:
         subtitle = subtitle[:97] + "..."
 
-    # Body: benefit (short version for notification)
+    # Body: benefit (use rotating extra message for variety)
     body = benefit
     if extra_benefit:
-        body = extra_benefit  # Use the rotating extra message for variety
-
-    # macOS notifications truncate long body text, so keep it concise
+        body = extra_benefit
     if len(body) > 150:
         body = body[:147] + "..."
 
-    return send_notification(title, subtitle, body)
+    return send_notification(title, subtitle, body, category=category)
 
 
 def send_noon_reminder(extra_message: str = "") -> bool:
     """Send the critical noon outdoor reminder with emphasis."""
-    title = "☀️ NOON: Go Outside Now!"
-    subtitle = "15 min outdoor walk — your eyes NEED real sunlight"
-    body = extra_message or (
-        "Indoor = 400 lux. Outdoor = 10,000+ lux. "
-        "This is the #1 thing you can do for myopia control."
-    )
-    return send_notification(title, subtitle, body, sound="Blow")
+    from .i18n import t
+
+    title = f"☀️ {t('notify.noon_title')}"
+    subtitle = t("notify.noon_subtitle")
+    body = extra_message or t("notify.noon_default")
+    return send_notification(title, subtitle, body, sound="Blow", category="outdoor")

@@ -59,6 +59,9 @@ class Config:
     # Whether to also open terminal UI on notification (vs notification only)
     terminal_ui_enabled: bool = True
 
+    # Language: "en" or "zh"
+    language: str = "en"
+
     @classmethod
     def load(cls) -> "Config":
         """Load config from file, or return defaults."""
@@ -81,6 +84,17 @@ class Config:
 
     def to_display(self) -> Dict[str, str]:
         """Return human-readable config for display."""
+        if self.language == "zh":
+            return {
+                "护眼提醒间隔": f"每 {self.eye_interval_min} 分钟",
+                "颈椎锻炼间隔": f"每 {self.neck_interval_min} 分钟",
+                "久坐提醒间隔": f"每 {self.sedentary_interval_min} 分钟",
+                "工作时间": f"{self.work_start_hour}:00 - {self.work_end_hour}:00",
+                "午间户外提醒": "已开启" if self.noon_reminder_enabled else "已关闭",
+                "提示音": self.notification_sound,
+                "终端交互界面": "已开启" if self.terminal_ui_enabled else "已关闭",
+                "语言": self.language,
+            }
         return {
             "Eye care interval": f"Every {self.eye_interval_min} minutes",
             "Neck exercise interval": f"Every {self.neck_interval_min} minutes",
@@ -91,6 +105,7 @@ class Config:
             else "Disabled",
             "Notification sound": self.notification_sound,
             "Terminal UI": "Enabled" if self.terminal_ui_enabled else "Disabled",
+            "Language": self.language,
         }
 
 

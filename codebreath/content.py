@@ -330,7 +330,10 @@ NOON_EXTRA_MESSAGES = [
 
 
 class ContentRotator:
-    """Ensures variety by tracking what has been shown recently."""
+    """Ensures variety by tracking what has been shown recently.
+
+    Uses i18n module to resolve content for the current language.
+    """
 
     def __init__(self):
         self._eye_history: List[int] = []
@@ -346,30 +349,44 @@ class ContentRotator:
     def next_eye_tip(self) -> tuple[Tip, str, str]:
         """Return next eye tip, ensuring no immediate repeat.
         Returns (tip, extra_benefit, extra_consequence)."""
-        idx = self._pick_no_repeat(len(EYE_TIPS), self._eye_history, max_history=2)
+        from .i18n import (
+            get_eye_tips,
+            get_eye_extra_benefits,
+            get_eye_extra_consequences,
+        )
+
+        tips = get_eye_tips()
+        idx = self._pick_no_repeat(len(tips), self._eye_history, max_history=2)
         self._eye_history.append(idx)
 
-        extra_b = EYE_EXTRA_BENEFITS[self._eye_benefit_idx % len(EYE_EXTRA_BENEFITS)]
-        extra_c = EYE_EXTRA_CONSEQUENCES[
-            self._eye_consequence_idx % len(EYE_EXTRA_CONSEQUENCES)
+        extra_benefits = get_eye_extra_benefits()
+        extra_consequences = get_eye_extra_consequences()
+        extra_b = extra_benefits[self._eye_benefit_idx % len(extra_benefits)]
+        extra_c = extra_consequences[
+            self._eye_consequence_idx % len(extra_consequences)
         ]
         self._eye_benefit_idx += 1
         self._eye_consequence_idx += 1
 
-        return EYE_TIPS[idx], extra_b, extra_c
+        return tips[idx], extra_b, extra_c
 
     def next_neck_combo(self) -> List[Tip]:
         """Return 2-3 neck exercises: 1 core + 1-2 auxiliary.
         Ensures each core exercise appears at least once per day."""
+        from .i18n import get_neck_core, get_neck_aux
+
+        neck_core = get_neck_core()
+        neck_aux = get_neck_aux()
+
         # Pick core: prefer ones not yet shown today
         unseen_core = [
-            i for i in range(len(NECK_CORE)) if i not in self._neck_core_today
+            i for i in range(len(neck_core)) if i not in self._neck_core_today
         ]
         if unseen_core:
             core_idx = random.choice(unseen_core)
         else:
             core_idx = self._pick_no_repeat(
-                len(NECK_CORE), self._neck_core_history, max_history=1
+                len(neck_core), self._neck_core_history, max_history=1
             )
         self._neck_core_history.append(core_idx)
         self._neck_core_today.add(core_idx)
@@ -379,18 +396,22 @@ class ContentRotator:
         aux_indices = []
         for _ in range(num_aux):
             aux_idx = self._pick_no_repeat(
-                len(NECK_AUX), self._neck_aux_history, max_history=1
+                len(neck_aux), self._neck_aux_history, max_history=1
             )
             self._neck_aux_history.append(aux_idx)
             aux_indices.append(aux_idx)
 
-        combo = [NECK_CORE[core_idx]]
+        combo = [neck_core[core_idx]]
         for ai in aux_indices:
-            combo.append(NECK_AUX[ai])
+            combo.append(neck_aux[ai])
         return combo
 
     def next_sedentary_tip(self, current_hour: int = 14) -> Tip:
         """Return next sedentary activity, with time-of-day awareness."""
+        from .i18n import get_sedentary_tips
+
+        sedentary_tips = get_sedentary_tips()
+
         preferred = None
         for hour_range, pref_indices in SEDENTARY_TIME_PREFERENCES.items():
             if current_hour in hour_range:
@@ -406,17 +427,26 @@ class ContentRotator:
             idx = random.choice(preferred)
         else:
             idx = self._pick_no_repeat(
-                len(SEDENTARY_TIPS), self._sedentary_history, max_history=2
+                len(sedentary_tips), self._sedentary_history, max_history=2
             )
 
         self._sedentary_history.append(idx)
-        return SEDENTARY_TIPS[idx]
+        return sedentary_tips[idx]
 
     def next_noon_message(self) -> str:
         """Return rotating noon outdoor extra message."""
-        msg = NOON_EXTRA_MESSAGES[self._noon_msg_idx % len(NOON_EXTRA_MESSAGES)]
+        from .i18n import get_noon_extra_messages
+
+        messages = get_noon_extra_messages()
+        msg = messages[self._noon_msg_idx % len(messages)]
         self._noon_msg_idx += 1
         return msg
+
+    def get_noon_outdoor(self) -> Tip:
+        """Return the noon outdoor tip in current language."""
+        from .i18n import get_noon_outdoor
+
+        return get_noon_outdoor()
 
     def reset_daily(self):
         """Reset daily tracking (call at start of each day)."""

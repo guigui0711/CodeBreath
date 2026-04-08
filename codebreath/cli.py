@@ -36,6 +36,9 @@ Commands:
     report          Show today's health report
     config          Show current configuration
     config set <key> <value>  Change a setting
+    lang <en|zh>    Switch language / 切换语言
+    build-notifier  Build the native notification helper (macOS)
+    setup           First-time setup guide
 
 Examples:
     codebreath start            # Start daemon in background
@@ -44,7 +47,19 @@ Examples:
     codebreath exercise eye     # Do an eye exercise now
     codebreath exercise neck    # Do neck exercises now
     codebreath report           # See today's stats
+    codebreath lang zh          # 切换为中文
+    codebreath build-notifier   # Build native notification helper
+    codebreath setup            # First-time setup guide
 """
+
+
+def _init_language():
+    """Initialize language from config."""
+    from .storage import Config
+    from .i18n import set_language
+
+    config = Config.load()
+    set_language(config.language)
 
 
 def main(argv: List[str] = None):
@@ -60,6 +75,9 @@ def main(argv: List[str] = None):
     if command == "--version":
         print(f"CodeBreath v{__version__}")
         return 0
+
+    # Initialize language before any command
+    _init_language()
 
     if command == "start":
         return cmd_start(args[1:])
@@ -77,6 +95,12 @@ def main(argv: List[str] = None):
         return cmd_report()
     elif command == "config":
         return cmd_config(args[1:])
+    elif command == "lang":
+        return cmd_lang(args[1:])
+    elif command == "build-notifier":
+        return cmd_build_notifier()
+    elif command == "setup":
+        return cmd_setup()
     else:
         print(f"Unknown command: {command}")
         print(f"Run 'codebreath --help' for usage.")
@@ -171,9 +195,10 @@ def cmd_status() -> int:
 
 def cmd_exercise(args: List[str]) -> int:
     """Run an immediate exercise session."""
-    from .content import ContentRotator, NOON_OUTDOOR
+    from .content import ContentRotator
     from .terminal_ui import run_exercise_session, run_quick_exercise
     from .storage import DailyLog
+    from .i18n import t
 
     rotator = ContentRotator()
     log = DailyLog.today()
@@ -188,9 +213,7 @@ def cmd_exercise(args: List[str]) -> int:
             exercise_type = "eye"
         else:
             exercise_type = "neck"
-        print(
-            f"Auto-selected: {exercise_type} (use 'codebreath exercise eye/neck/sedentary/outdoor' to choose)"
-        )
+        print(t("cli.auto_selected").format(type=exercise_type))
     else:
         exercise_type = args[0].lower()
 
@@ -212,12 +235,13 @@ def cmd_exercise(args: List[str]) -> int:
         log.add_event("sedentary", tip.name, "completed")
 
     elif exercise_type == "outdoor":
-        run_quick_exercise("outdoor", NOON_OUTDOOR)
-        log.add_event("outdoor", NOON_OUTDOOR.name, "completed")
+        noon_tip = rotator.get_noon_outdoor()
+        run_quick_exercise("outdoor", noon_tip)
+        log.add_event("outdoor", noon_tip.name, "completed")
 
     else:
-        print(f"Unknown exercise type: {exercise_type}")
-        print("Available: eye, neck, sedentary, outdoor")
+        print(t("cli.unknown_exercise").format(type=exercise_type))
+        print(t("cli.available_types"))
         return 1
 
     return 0
@@ -238,20 +262,21 @@ def cmd_report() -> int:
 def cmd_config(args: List[str]) -> int:
     """Show or modify configuration."""
     from .storage import Config
+    from .i18n import t
 
     config = Config.load()
 
     if not args:
         # Show current config
-        print("\nCodeBreath Configuration")
+        print(f"\n{t('cli.config_title')}")
         print("─" * 40)
         for key, val in config.to_display().items():
             print(f"  {key}: {val}")
         print("─" * 40)
-        print(f"\nConfig file: ~/.codebreath/config.json")
-        print(f"Edit with: codebreath config set <key> <value>")
+        print(f"\n{t('cli.config_file')}")
+        print(t("cli.config_edit"))
         print()
-        print("Available keys:")
+        print(t("cli.config_keys"))
         print("  eye_interval_min      (default: 30)")
         print("  neck_interval_min     (default: 45)")
         print("  sedentary_interval_min (default: 60)")
@@ -259,6 +284,7 @@ def cmd_config(args: List[str]) -> int:
         print("  work_end_hour         (default: 19)")
         print("  noon_reminder_enabled (default: true)")
         print("  terminal_ui_enabled   (default: true)")
+        print("  language              (default: en) [en, zh]")
         print()
         return 0
 
@@ -285,9 +311,138 @@ def cmd_config(args: List[str]) -> int:
 
         setattr(config, key, typed_value)
         config.save()
-        print(f"Set {key} = {typed_value}")
-        print("Restart CodeBreath for changes to take effect.")
+        print(t("cli.set_done").format(key=key, value=typed_value))
+        print(t("cli.restart_hint"))
         return 0
 
     print(f"Unknown config command: {' '.join(args)}")
     return 1
+
+
+def cmd_lang(args: List[str]) -> int:
+    """Switch language."""
+    from .storage import Config
+    from .i18n import set_language, t
+
+    if not args:
+        print("Usage: codebreath lang <en|zh>")
+        print("  en  English")
+        print("  zh  中文")
+        return 1
+
+    lang = args[0].lower()
+    if lang not in ("en", "zh"):
+        print(f"Unsupported language: {lang}")
+        print("Supported: en, zh")
+        return 1
+
+    config = Config.load()
+    config.language = lang
+    config.save()
+
+    # Update current session language so the message below is localized
+    set_language(lang)
+    print(t("cli.lang_switched").format(lang=lang))
+    print(t("cli.restart_hint"))
+    return 0
+
+
+def cmd_build_notifier() -> int:
+    """Build the native Swift notification helper."""
+    import shutil
+    from pathlib import Path
+    from .i18n import t
+
+    # Check for swiftc
+    if not shutil.which("swiftc"):
+        print("Error: swiftc not found.")
+        print("Install Xcode command-line tools:")
+        print("  xcode-select --install")
+        return 1
+
+    # Find build.sh relative to this package
+    package_dir = Path(__file__).parent.parent
+    build_script = package_dir / "swift" / "build.sh"
+
+    if not build_script.is_file():
+        print(f"Error: Build script not found at {build_script}")
+        print("Make sure swift/build.sh exists in the project root.")
+        return 1
+
+    import subprocess
+
+    print("Building native notification helper...")
+    print(f"Script: {build_script}")
+    print()
+
+    result = subprocess.run(
+        ["bash", str(build_script)],
+        cwd=str(package_dir),
+    )
+
+    if result.returncode == 0:
+        print()
+        print("Next step: run 'codebreath setup' to configure notification settings.")
+    return result.returncode
+
+
+def cmd_setup() -> int:
+    """Interactive first-time setup guide."""
+    from pathlib import Path
+    from .notifier import _native_available
+    from .i18n import t
+
+    print()
+    print("=" * 50)
+    print("  CodeBreath Setup Guide")
+    print("=" * 50)
+    print()
+
+    # Step 1: Check native helper
+    print("[1/3] Native Notification Helper")
+    print("-" * 40)
+    if _native_available():
+        print("  Status: BUILT (ready)")
+    else:
+        print("  Status: NOT BUILT")
+        print("  Run: codebreath build-notifier")
+        print()
+        print("  Without the native helper, notifications will use")
+        print("  basic macOS banners (auto-dismiss in ~5 seconds,")
+        print("  no Done/Skip buttons).")
+    print()
+
+    # Step 2: Notification permission
+    print("[2/3] macOS Notification Permission")
+    print("-" * 40)
+    if _native_available():
+        print("  After building, macOS needs notification permission.")
+        print("  Open System Settings > Notifications > CodeBreath:")
+        print()
+        print("    1. Allow Notifications = ON")
+        print("    2. Alert style = 'Alerts' (NOT 'Banners')")
+        print("       This keeps notifications visible until you")
+        print("       click Done or Skip.")
+        print()
+        print("  You can test with:")
+        print("    codebreath exercise eye")
+    else:
+        print("  (Build the helper first — see step 1)")
+    print()
+
+    # Step 3: Language
+    print("[3/3] Language / 语言设置")
+    print("-" * 40)
+    from .storage import Config
+
+    config = Config.load()
+    print(f"  Current: {config.language}")
+    print("  Change:  codebreath lang zh  (中文)")
+    print("           codebreath lang en  (English)")
+    print()
+
+    print("=" * 50)
+    print("  Setup complete! Start with: codebreath start")
+    print("=" * 50)
+    print()
+    return 0

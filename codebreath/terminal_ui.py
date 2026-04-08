@@ -72,38 +72,42 @@ def countdown_timer(seconds: int, label: str = ""):
     Shows a live countdown with progress bar.
     User can press Ctrl+C to skip.
     """
+    from .i18n import t
+
     total = seconds
     try:
         for remaining in range(seconds, 0, -1):
             bar = progress_bar(total - remaining, total)
             time_str = format_time(remaining)
-            line = f"\r  {CYAN}{label}{RESET} {bar} {BOLD}{time_str}{RESET} remaining  "
+            line = f"\r  {CYAN}{label}{RESET} {bar} {BOLD}{time_str}{RESET} {t('ui.remaining')}  "
             sys.stdout.write(line)
             sys.stdout.flush()
             time.sleep(1)
 
         # Complete
         bar = progress_bar(total, total)
-        line = f"\r  {GREEN}{label}{RESET} {bar} {GREEN}Done!{RESET}              "
+        line = f"\r  {GREEN}{label}{RESET} {bar} {GREEN}{t('ui.done')}{RESET}              "
         sys.stdout.write(line)
         sys.stdout.flush()
         print()
         return True
     except KeyboardInterrupt:
-        print(f"\n  {DIM}(Skipped){RESET}")
+        print(f"\n  {DIM}{t('ui.skipped')}{RESET}")
         return False
 
 
 def display_tip_header(category: str, tip: Tip):
     """Display a tip header with category and name."""
+    from .i18n import t
+
     icons = {
-        "eye": "👁  Eye Care",
-        "neck": "🦴  Neck Exercise",
-        "sedentary": "🚶  Move Break",
-        "outdoor": "☀️  Go Outside",
+        "eye": f"👁  {t('cat.eye')}",
+        "neck": f"🦴  {t('cat.neck')}",
+        "sedentary": f"🚶  {t('cat.sedentary')}",
+        "outdoor": f"☀️  {t('cat.outdoor')}",
     }
 
-    header = icons.get(category, "💡  Health Break")
+    header = icons.get(category, f"💡  {t('cat.health_break')}")
     w = min(get_terminal_width(), 60)
 
     print()
@@ -114,11 +118,13 @@ def display_tip_header(category: str, tip: Tip):
 
 def display_tip_body(tip: Tip, extra_benefit: str = "", extra_consequence: str = ""):
     """Display tip instruction, benefit, consequence, and ASCII art."""
+    from .i18n import t
+
     w = min(get_terminal_width(), 60)
 
     # Instruction
     print()
-    print(f"  {BOLD}What to do:{RESET}")
+    print(f"  {BOLD}{t('ui.what_to_do')}{RESET}")
     _print_wrapped(f"  {tip.instruction}", w)
     print()
 
@@ -128,7 +134,7 @@ def display_tip_body(tip: Tip, extra_benefit: str = "", extra_consequence: str =
         print()
 
     # Benefit
-    print(f"  {GREEN}✓ Why it helps:{RESET}")
+    print(f"  {GREEN}✓ {t('ui.why_helps')}{RESET}")
     benefit = tip.benefit
     if extra_benefit:
         benefit += f" {extra_benefit}"
@@ -136,7 +142,7 @@ def display_tip_body(tip: Tip, extra_benefit: str = "", extra_consequence: str =
     print()
 
     # Consequence
-    print(f"  {YELLOW}✗ If you skip:{RESET}")
+    print(f"  {YELLOW}✗ {t('ui.if_skip')}{RESET}")
     consequence = tip.consequence
     if extra_consequence:
         consequence += f" {extra_consequence}"
@@ -180,6 +186,8 @@ def run_exercise_session(
         extra_benefit: Rotating extra benefit message
         extra_consequence: Rotating extra consequence message
     """
+    from .i18n import t
+
     clear_screen()
     w = min(get_terminal_width(), 60)
 
@@ -187,7 +195,9 @@ def run_exercise_session(
 
     for i, tip in enumerate(tips, 1):
         if total_exercises > 1:
-            print(f"\n  {DIM}Exercise {i}/{total_exercises}{RESET}")
+            print(
+                f"\n  {DIM}{t('ui.exercise_n').format(i=i, total=total_exercises)}{RESET}"
+            )
 
         display_tip_header(category, tip)
         display_tip_body(
@@ -198,18 +208,18 @@ def run_exercise_session(
 
         # Countdown
         print(f"  {CYAN}{hr('─', w)}{RESET}")
-        print(f"  {DIM}Press Ctrl+C to skip this timer{RESET}")
+        print(f"  {DIM}{t('ui.skip_hint')}{RESET}")
         print()
 
         completed = countdown_timer(tip.duration_seconds, tip.name)
 
         if completed:
-            print(f"\n  {GREEN}{BOLD}Great job! ✓{RESET}")
+            print(f"\n  {GREEN}{BOLD}{t('ui.great_job')} ✓{RESET}")
         print()
 
         # Pause between exercises in a combo
         if i < total_exercises:
-            print(f"  {DIM}Next exercise in 3 seconds...{RESET}")
+            print(f"  {DIM}{t('ui.next_exercise')}{RESET}")
             try:
                 time.sleep(3)
             except KeyboardInterrupt:
@@ -217,8 +227,8 @@ def run_exercise_session(
 
     # Session complete
     print(f"  {CYAN}{hr('═', w)}{RESET}")
-    print(f"  {GREEN}{BOLD}Session complete!{RESET}")
-    print(f"  {DIM}Your body thanks you. Back to coding!{RESET}")
+    print(f"  {GREEN}{BOLD}{t('ui.session_complete')}{RESET}")
+    print(f"  {DIM}{t('ui.back_to_coding')}{RESET}")
     print(f"  {CYAN}{hr('═', w)}{RESET}")
     print()
 
@@ -237,33 +247,35 @@ def display_status(
     stats: Optional[dict] = None,
 ):
     """Display CodeBreath daemon status."""
+    from .i18n import t
+
     w = min(get_terminal_width(), 60)
 
     print()
-    print(f"  {BOLD}{CYAN}CodeBreath Status{RESET}")
+    print(f"  {BOLD}{CYAN}{t('status.title')}{RESET}")
     print(f"  {hr('─', w)}")
 
     if not is_running:
-        print(f"  {RED}● Not running{RESET}")
-        print(f"  {DIM}Start with: codebreath start{RESET}")
+        print(f"  {RED}● {t('status.not_running')}{RESET}")
+        print(f"  {DIM}{t('status.start_hint')}{RESET}")
     elif is_paused:
-        print(f"  {YELLOW}● Paused{RESET}")
-        print(f"  {DIM}Resume with: codebreath resume{RESET}")
+        print(f"  {YELLOW}● {t('status.paused')}{RESET}")
+        print(f"  {DIM}{t('status.resume_hint')}{RESET}")
     else:
-        print(f"  {GREEN}● Running{RESET}")
+        print(f"  {GREEN}● {t('status.running')}{RESET}")
 
     if is_running:
         print()
         if next_eye:
-            print(f"  👁  Next eye care:     {next_eye}")
+            print(f"  👁  {t('status.next_eye')}     {next_eye}")
         if next_neck:
-            print(f"  🦴  Next neck exercise: {next_neck}")
+            print(f"  🦴  {t('status.next_neck')} {next_neck}")
         if next_sedentary:
-            print(f"  🚶  Next move break:   {next_sedentary}")
+            print(f"  🚶  {t('status.next_sedentary')}   {next_sedentary}")
 
     if stats:
         print()
-        print(f"  {BOLD}Today's stats:{RESET}")
+        print(f"  {BOLD}{t('status.today_stats')}{RESET}")
         print(f"  {DIM}{hr('─', w)}{RESET}")
         for key, val in stats.items():
             print(f"  {key}: {val}")
@@ -274,12 +286,14 @@ def display_status(
 
 def display_daily_report(stats: dict):
     """Display end-of-day health report."""
+    from .i18n import t
+
     w = min(get_terminal_width(), 60)
 
     clear_screen()
     print()
     print(f"  {BOLD}{CYAN}{'═' * w}{RESET}")
-    print(f"  {BOLD}📊 CodeBreath Daily Report{RESET}")
+    print(f"  {BOLD}📊 {t('report.title')}{RESET}")
     print(f"  {CYAN}{'═' * w}{RESET}")
     print()
 
@@ -290,7 +304,7 @@ def display_daily_report(stats: dict):
     if total > 0:
         rate = int(100 * completed / total)
         bar = progress_bar(completed, total, width=20)
-        print(f"  Completion rate: {bar}")
+        print(f"  {t('report.completion')} {bar}")
         print()
 
     # Category breakdown
@@ -303,13 +317,16 @@ def display_daily_report(stats: dict):
         done = stats.get(f"{cat}_completed", 0)
         total_cat = stats.get(f"{cat}_total", 0)
         if total_cat > 0:
-            print(f"  {icon} {cat.capitalize():12s} {done}/{total_cat} completed")
+            cat_label = t(f"cat.{cat}")
+            print(
+                f"  {icon} {cat_label:12s} {done}/{total_cat} {t('status.completed')}"
+            )
 
     # Streaks and encouragement
     streak = stats.get("streak_days", 0)
     if streak > 1:
         print()
-        print(f"  🔥 {streak}-day streak! Keep it up!")
+        print(f"  🔥 {t('report.streak').format(n=streak)}")
 
     print()
     print(f"  {CYAN}{'═' * w}{RESET}")

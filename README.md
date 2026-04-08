@@ -23,7 +23,10 @@ CodeBreath addresses all of these with science-backed micro-interventions that t
   - 🚶 Sedentary breaks (every 60 min) — 7 activities with time-of-day awareness
 - **Noon outdoor reminder** — the single most impactful thing for high myopia control
 - **Content rotation** — every reminder differs from the last. Benefits and consequences also rotate from message pools
-- **macOS system notifications** — non-blocking, auto-dismiss
+- **macOS system notifications** — dual backend:
+  - **Native (recommended)**: Swift helper with persistent alert-style notifications and Done/Skip action buttons for completion tracking
+  - **Fallback**: `osascript` banners (auto-dismiss in ~5 seconds, no buttons)
+- **Completion tracking** — click "Done" or "Skip" on notifications to log whether you did the exercise
 - **Terminal interactive mode** — countdown timers with ASCII art exercise guides
 - **Daily health report** with completion stats and streaks
 - **Configurable** — intervals, working hours, all customizable
@@ -32,8 +35,14 @@ CodeBreath addresses all of these with science-backed micro-interventions that t
 
 ```bash
 # Clone the repo
-git clone https://github.com/jiaruigui/CodeBreath.git
+git clone https://github.com/guigui0711/CodeBreath.git
 cd CodeBreath
+
+# Build native notification helper (recommended)
+codebreath build-notifier
+
+# Run setup guide
+codebreath setup
 
 # Start the daemon
 python3 -m codebreath start
@@ -57,6 +66,10 @@ codebreath exercise outdoor # Noon outdoor reminder
 codebreath report           # Today's health report
 codebreath config           # Show configuration
 codebreath config set eye_interval_min 25  # Change setting
+codebreath lang zh          # Switch to Chinese (中文)
+codebreath lang en          # Switch back to English
+codebreath build-notifier   # Build native notification helper
+codebreath setup            # First-time setup guide
 ```
 
 ## Configuration
@@ -71,6 +84,53 @@ Settings are stored in `~/.codebreath/config.json`:
 | `work_start_hour` | 9 | Working hours start (24h) |
 | `work_end_hour` | 19 | Working hours end (24h) |
 | `noon_reminder_enabled` | true | Enable noon outdoor reminder |
+| `language` | en | UI and content language (`en` or `zh`) |
+
+## Language / 语言切换
+
+CodeBreath supports English and Chinese. All notifications, terminal UI, exercise instructions, and motivational messages are fully translated.
+
+```bash
+# Switch to Chinese
+codebreath lang zh
+
+# Switch back to English
+codebreath lang en
+```
+
+Restart the daemon after switching for the change to take effect.
+
+## Native Notifications (Recommended)
+
+By default, CodeBreath uses basic macOS `osascript` banners that auto-dismiss in ~5 seconds with no action buttons. For a better experience, build the native Swift notification helper:
+
+```bash
+# Build the helper (requires Xcode command-line tools)
+codebreath build-notifier
+
+# Or directly:
+./swift/build.sh
+```
+
+This gives you:
+- **Persistent notifications** that stay on screen until you interact with them
+- **Done / Skip buttons** — click to log whether you completed the exercise
+- **Completion tracking** in your daily health report
+
+### macOS Setup
+
+After building, configure macOS to use alert-style notifications:
+
+1. Open **System Settings > Notifications > CodeBreath**
+2. Set **Allow Notifications** = ON
+3. Set **Alert style** = **Alerts** (not "Banners")
+
+The "Alerts" style keeps notifications visible until you click a button. Without this, macOS will auto-dismiss them as banners.
+
+### Requirements
+
+- Xcode command-line tools (`xcode-select --install`)
+- macOS 12.0+
 
 ## The Science
 
@@ -93,8 +153,9 @@ Every recommendation in CodeBreath is backed by peer-reviewed research:
 
 ## Requirements
 
-- macOS (uses `osascript` for notifications)
+- macOS 12.0+
 - Python 3.9+
+- Xcode command-line tools (optional, for native notifications — `xcode-select --install`)
 
 ## License
 
