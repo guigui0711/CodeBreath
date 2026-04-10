@@ -62,6 +62,11 @@ class Config:
     # Language: "en" or "zh"
     language: str = "en"
 
+    # Daily report card
+    daily_report_enabled: bool = True
+    daily_report_hour: int = 19
+    daily_report_minute: int = 0
+
     @classmethod
     def load(cls) -> "Config":
         """Load config from file, or return defaults."""
@@ -94,6 +99,8 @@ class Config:
                 "提示音": self.notification_sound,
                 "终端交互界面": "已开启" if self.terminal_ui_enabled else "已关闭",
                 "语言": self.language,
+                "每日报卡": "已开启" if self.daily_report_enabled else "已关闭",
+                "日报时间": f"{self.daily_report_hour}:{self.daily_report_minute:02d}",
             }
         return {
             "Eye care interval": f"Every {self.eye_interval_min} minutes",
@@ -106,6 +113,8 @@ class Config:
             "Notification sound": self.notification_sound,
             "Terminal UI": "Enabled" if self.terminal_ui_enabled else "Disabled",
             "Language": self.language,
+            "Daily report": "Enabled" if self.daily_report_enabled else "Disabled",
+            "Daily report time": f"{self.daily_report_hour}:{self.daily_report_minute:02d}",
         }
 
 
