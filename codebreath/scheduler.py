@@ -12,8 +12,14 @@ import time
 from datetime import datetime, date
 from typing import Optional
 
-from .content import ContentRotator, NOON_OUTDOOR
-from .notifier import send_health_reminder, send_noon_reminder
+from .content import ContentRotator
+from .i18n import set_language, t
+from .notifier import (
+    send_health_reminder,
+    send_noon_reminder,
+    read_response,
+    cleanup_old_responses,
+)
 from .storage import (
     Config,
     DailyLog,
@@ -38,6 +44,9 @@ class Scheduler:
 
     def __init__(self, config: Optional[Config] = None):
         self.config = config or Config.load()
+        # Initialize language for the daemon process
+        set_language(self.config.language)
+
         self.rotator = ContentRotator()
         self.log = DailyLog.today()
 
@@ -52,6 +61,9 @@ class Scheduler:
         self._next_neck: Optional[float] = None
         self._next_sedentary: Optional[float] = None
 
+        # Pending notification responses: list of (resp_file, category, name)
+        self._pending_responses: list = []
+
     def start(self, foreground: bool = False):
         """Start the scheduler.
 
@@ -61,8 +73,8 @@ class Scheduler:
         """
         existing_pid = read_pid()
         if existing_pid:
-            print(f"CodeBreath is already running (PID {existing_pid}).")
-            print("Use 'codebreath stop' to stop it first.")
+            print(t("sched.already_running").format(pid=existing_pid))
+            print(t("sched.stop_first"))
             return False
 
         if not foreground:
@@ -91,7 +103,7 @@ class Scheduler:
         self._next_sedentary = now + self.config.sedentary_interval_min * 60
 
         if foreground:
-            print("CodeBreath started (foreground mode). Press Ctrl+C to stop.")
+            print(t("sched.fg_start"))
             self._print_schedule()
 
         self._run_loop()
@@ -150,10 +162,17 @@ class Scheduler:
             # Sleep in small increments so we can respond to stop quickly
             self._stop_event.wait(10)
 
+            # Check for notification responses (Done/Skip from native notifications)
+            self._check_responses()
+
+            # Periodic cleanup of old response files
+            if int(now) % 300 < 11:
+                cleanup_old_responses()
+
     def _fire_eye_reminder(self):
         """Fire an eye care reminder."""
         tip, extra_b, extra_c = self.rotator.next_eye_tip()
-        send_health_reminder(
+        ok = send_health_reminder(
             category="eye",
             tip_name=tip.name,
             instruction=tip.instruction,
@@ -166,9 +185,9 @@ class Scheduler:
     def _fire_neck_reminder(self):
         """Fire a neck exercise reminder."""
         combo = self.rotator.next_neck_combo()
-        names = " + ".join(t.name for t in combo)
-        instructions = " → ".join(t.instruction for t in combo)
-        send_health_reminder(
+        names = " + ".join(tip.name for tip in combo)
+        instructions = " → ".join(tip.instruction for tip in combo)
+        ok = send_health_reminder(
             category="neck",
             tip_name=names,
             instruction=instructions,
@@ -181,7 +200,7 @@ class Scheduler:
         """Fire a sedentary break reminder."""
         current_hour = datetime.now().hour
         tip = self.rotator.next_sedentary_tip(current_hour)
-        send_health_reminder(
+        ok = send_health_reminder(
             category="sedentary",
             tip_name=tip.name,
             instruction=tip.instruction,
@@ -194,8 +213,29 @@ class Scheduler:
         """Fire the noon outdoor reminder."""
         extra = self.rotator.next_noon_message()
         send_noon_reminder(extra)
-        self.log.add_event("outdoor", NOON_OUTDOOR.name, "notified")
+        noon_tip = self.rotator.get_noon_outdoor()
+        self.log.add_event("outdoor", noon_tip.name, "notified")
         self._noon_sent_today = True
+
+    def _check_responses(self):
+        """Check response directory for notification action results."""
+        from .notifier import _RESPONSE_DIR
+
+        if not _RESPONSE_DIR.is_dir():
+            return
+        for f in list(_RESPONSE_DIR.iterdir()):
+            if not f.suffix == ".json":
+                continue
+            action = read_response(str(f))
+            if action is None:
+                continue
+            # Extract category from filename: {category}_{pid}_{id}.json
+            parts = f.stem.split("_", 1)
+            category = parts[0] if parts else "unknown"
+            if action == "done":
+                self.log.add_event(category, "", "completed")
+            elif action == "skip":
+                self.log.add_event(category, "", "skipped")
 
     def _in_working_hours(self, hour: int) -> bool:
         """Check if current hour is within working hours."""
@@ -215,8 +255,8 @@ class Scheduler:
             pid = os.fork()
             if pid > 0:
                 # Parent: print PID and exit
-                print(f"CodeBreath started (PID {pid}).")
-                print("Use 'codebreath stop' to stop.")
+                print(t("sched.started").format(pid=pid))
+                print(t("sched.stop_hint"))
                 sys.exit(0)
         except OSError as e:
             print(f"Fork failed: {e}", file=sys.stderr)
@@ -249,16 +289,19 @@ class Scheduler:
 
     def _print_schedule(self):
         """Print upcoming schedule (foreground mode only)."""
-        now = datetime.now()
+        from .i18n import t as _t
+
         print(
-            f"\nSchedule (working hours {self.config.work_start_hour}:00-{self.config.work_end_hour}:00):"
+            f"\nSchedule ({self.config.work_start_hour}:00-{self.config.work_end_hour}:00):"
         )
-        print(f"  👁  Eye care:     every {self.config.eye_interval_min} min")
-        print(f"  🦴  Neck exercise: every {self.config.neck_interval_min} min")
-        print(f"  🚶  Move break:   every {self.config.sedentary_interval_min} min")
+        print(f"  👁  {_t('cat.eye')}:     every {self.config.eye_interval_min} min")
+        print(f"  🦴  {_t('cat.neck')}: every {self.config.neck_interval_min} min")
+        print(
+            f"  🚶  {_t('cat.sedentary')}:   every {self.config.sedentary_interval_min} min"
+        )
         if self.config.noon_reminder_enabled:
             print(
-                f"  ☀️  Noon outdoor:  at {self.config.noon_reminder_hour}:{self.config.noon_reminder_minute:02d}"
+                f"  ☀️  {_t('cat.outdoor')}:  at {self.config.noon_reminder_hour}:{self.config.noon_reminder_minute:02d}"
             )
         print()
 
@@ -282,7 +325,7 @@ def stop_daemon() -> bool:
     """Stop the running daemon."""
     pid = read_pid()
     if not pid:
-        print("CodeBreath is not running.")
+        print(t("sched.not_running"))
         return False
 
     try:
@@ -295,11 +338,11 @@ def stop_daemon() -> bool:
             except ProcessLookupError:
                 break
         remove_pid()
-        print("CodeBreath stopped.")
+        print(t("sched.stopped"))
         return True
     except ProcessLookupError:
         remove_pid()
-        print("CodeBreath was not running (stale PID file cleaned up).")
+        print(t("sched.stale_pid"))
         return False
     except PermissionError:
         print(f"Permission denied to stop process {pid}.")
@@ -310,21 +353,21 @@ def pause_daemon(minutes: int = 30):
     """Pause the daemon for N minutes."""
     pid = read_pid()
     if not pid:
-        print("CodeBreath is not running.")
+        print(t("sched.not_running"))
         return
 
     paused_until = time.time() + minutes * 60
     save_state(paused=True, paused_until=paused_until)
-    print(f"CodeBreath paused for {minutes} minutes.")
-    print(f"Reminders will resume automatically, or use 'codebreath resume'.")
+    print(t("sched.paused").format(min=minutes))
+    print(t("sched.pause_hint"))
 
 
 def resume_daemon():
     """Resume the daemon from pause."""
     pid = read_pid()
     if not pid:
-        print("CodeBreath is not running.")
+        print(t("sched.not_running"))
         return
 
     save_state(paused=False)
-    print("CodeBreath resumed.")
+    print(t("sched.resumed"))
