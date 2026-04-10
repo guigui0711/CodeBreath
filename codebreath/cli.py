@@ -285,6 +285,9 @@ def cmd_config(args: List[str]) -> int:
         print("  noon_reminder_enabled (default: true)")
         print("  terminal_ui_enabled   (default: true)")
         print("  language              (default: en) [en, zh]")
+        print("  daily_report_enabled  (default: true)")
+        print("  daily_report_hour     (default: 19)")
+        print("  daily_report_minute   (default: 0)")
         print()
         return 0
 

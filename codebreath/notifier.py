@@ -17,7 +17,7 @@ used automatically.
 import json
 import os
 import subprocess
-import tempfile
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -64,7 +64,7 @@ def _send_native(
     if not _native_available():
         return None
 
-    from .i18n import t, get_language
+    from .i18n import get_language
 
     # Determine button labels
     lang = get_language()
@@ -80,30 +80,32 @@ def _send_native(
     resp_file = resp_dir / f"{category}_{os.getpid()}_{id(title)}.json"
 
     try:
+        cmd = [
+            "open",
+            "-n",
+            "-g",  # -g = don't bring to foreground
+            str(_NATIVE_APP),
+            "--args",
+            "--title",
+            title,
+            "--subtitle",
+            subtitle,
+            "--body",
+            body,
+            "--done-label",
+            done_label,
+            "--skip-label",
+            skip_label,
+            "--response-file",
+            str(resp_file),
+            "--sound",
+            sound,
+            "--timeout",
+            str(timeout),
+        ]
+
         subprocess.Popen(
-            [
-                "open",
-                "-n",
-                "-g",  # -g = don't bring to foreground
-                str(_NATIVE_APP),
-                "--args",
-                "--title",
-                title,
-                "--subtitle",
-                subtitle,
-                "--body",
-                body,
-                "--done-label",
-                done_label,
-                "--skip-label",
-                skip_label,
-                "--response-file",
-                str(resp_file),
-                "--sound",
-                sound,
-                "--timeout",
-                str(timeout),
-            ],
+            cmd,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
@@ -166,10 +168,74 @@ def send_notification(
 
     Returns True if the notification was sent (by either backend).
     """
-    resp = _send_native(title, subtitle, body, sound, category, timeout)
+    resp = _send_native(
+        title,
+        subtitle,
+        body,
+        sound,
+        category,
+        timeout,
+    )
     if resp is not None:
         return True
     return _send_osascript(title, subtitle, body, sound)
+
+
+def send_notification_trackable(
+    title: str,
+    subtitle: str = "",
+    body: str = "",
+    sound: str = "default",
+    category: str = "",
+    timeout: int = 300,
+) -> Optional[str]:
+    """Send notification and return response file path when native backend is used.
+
+    If native helper is unavailable, sends via fallback and returns None.
+    """
+    resp = _send_native(
+        title,
+        subtitle,
+        body,
+        sound,
+        category,
+        timeout,
+    )
+    if resp is not None:
+        return resp
+    _send_osascript(title, subtitle, body, sound)
+    return None
+
+
+def create_detail_panel(filename_prefix: str, markdown: str) -> Optional[str]:
+    """Persist a markdown detail panel and return its path."""
+    details_dir = _CODEBREATH_DIR / "details"
+    details_dir.mkdir(parents=True, exist_ok=True)
+    safe_prefix = "".join(
+        c if c.isalnum() or c in "-_" else "_" for c in filename_prefix
+    )
+    stamp = str(int(time.time() * 1000))
+    path = details_dir / f"{safe_prefix}_{stamp}.md"
+    try:
+        path.write_text(markdown, encoding="utf-8")
+        return str(path)
+    except OSError:
+        return None
+
+
+def open_detail_panel(panel_path: str) -> bool:
+    """Open a markdown detail panel with system default app."""
+    if not panel_path:
+        return False
+    try:
+        subprocess.Popen(
+            ["open", panel_path],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return True
+    except OSError:
+        return False
 
 
 # ---------------------------------------------------------------------------

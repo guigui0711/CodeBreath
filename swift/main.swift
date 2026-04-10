@@ -155,8 +155,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         case UNNotificationDismissActionIdentifier:
             writeResponse("dismissed")
         default:
-            // Clicked notification body → start exercise
-            writeResponse("done")
+            // Clicked notification body opens details panel in scheduler
+            writeResponse("details")
         }
         completionHandler()
     }
