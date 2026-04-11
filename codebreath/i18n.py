@@ -46,6 +46,7 @@ UI_STRINGS: Dict[str, Dict[str, str]] = {
         # Category headers
         "cat.eye": "Eye Care",
         "cat.neck": "Neck Exercise",
+        "cat.eyeneck": "Eye + Neck",
         "cat.sedentary": "Move Break",
         "cat.outdoor": "Go Outside!",
         "cat.health_break": "Health Break",
@@ -72,8 +73,7 @@ UI_STRINGS: Dict[str, Dict[str, str]] = {
         "status.today_stats": "Today's stats:",
         "status.no_reminders": "No reminders yet",
         "status.completed": "completed",
-        "status.next_eye": "Next eye care:",
-        "status.next_neck": "Next neck exercise:",
+        "status.next_eyeneck": "Next eye+neck:",
         "status.next_sedentary": "Next move break:",
         # Report
         "report.title": "CodeBreath Daily Report",
@@ -111,6 +111,7 @@ UI_STRINGS: Dict[str, Dict[str, str]] = {
         # Category headers
         "cat.eye": "护眼时间",
         "cat.neck": "颈椎锻炼",
+        "cat.eyeneck": "护眼 + 颈肩",
         "cat.sedentary": "起来动动",
         "cat.outdoor": "出去走走！",
         "cat.health_break": "健康休息",
@@ -137,8 +138,7 @@ UI_STRINGS: Dict[str, Dict[str, str]] = {
         "status.today_stats": "今日统计：",
         "status.no_reminders": "暂无提醒",
         "status.completed": "已完成",
-        "status.next_eye": "下次护眼：",
-        "status.next_neck": "下次颈椎锻炼：",
+        "status.next_eyeneck": "下次护眼+颈肩：",
         "status.next_sedentary": "下次起身：",
         # Report
         "report.title": "CodeBreath 每日报告",

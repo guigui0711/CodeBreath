@@ -207,17 +207,17 @@ def send_notification_trackable(
     return None
 
 
-def create_detail_panel(filename_prefix: str, markdown: str) -> Optional[str]:
-    """Persist a markdown detail panel and return its path."""
+def create_detail_panel(filename_prefix: str, html_content: str) -> Optional[str]:
+    """Persist an HTML detail panel and return its path."""
     details_dir = _CODEBREATH_DIR / "details"
     details_dir.mkdir(parents=True, exist_ok=True)
     safe_prefix = "".join(
         c if c.isalnum() or c in "-_" else "_" for c in filename_prefix
     )
     stamp = str(int(time.time() * 1000))
-    path = details_dir / f"{safe_prefix}_{stamp}.md"
+    path = details_dir / f"{safe_prefix}_{stamp}.html"
     try:
-        path.write_text(markdown, encoding="utf-8")
+        path.write_text(html_content, encoding="utf-8")
         return str(path)
     except OSError:
         return None

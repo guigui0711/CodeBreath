@@ -40,8 +40,7 @@ class Config:
     """User-configurable settings."""
 
     # Reminder intervals (minutes)
-    eye_interval_min: int = 30
-    neck_interval_min: int = 45
+    eyeneck_interval_min: int = 30
     sedentary_interval_min: int = 60
 
     # Working hours (reminders only fire within this window)
@@ -91,8 +90,7 @@ class Config:
         """Return human-readable config for display."""
         if self.language == "zh":
             return {
-                "护眼提醒间隔": f"每 {self.eye_interval_min} 分钟",
-                "颈椎锻炼间隔": f"每 {self.neck_interval_min} 分钟",
+                "护眼+颈肩提醒间隔": f"每 {self.eyeneck_interval_min} 分钟",
                 "久坐提醒间隔": f"每 {self.sedentary_interval_min} 分钟",
                 "工作时间": f"{self.work_start_hour}:00 - {self.work_end_hour}:00",
                 "午间户外提醒": "已开启" if self.noon_reminder_enabled else "已关闭",
@@ -103,8 +101,7 @@ class Config:
                 "日报时间": f"{self.daily_report_hour}:{self.daily_report_minute:02d}",
             }
         return {
-            "Eye care interval": f"Every {self.eye_interval_min} minutes",
-            "Neck exercise interval": f"Every {self.neck_interval_min} minutes",
+            "Eye+Neck reminder interval": f"Every {self.eyeneck_interval_min} minutes",
             "Sedentary break interval": f"Every {self.sedentary_interval_min} minutes",
             "Working hours": f"{self.work_start_hour}:00 - {self.work_end_hour}:00",
             "Noon outdoor reminder": "Enabled"

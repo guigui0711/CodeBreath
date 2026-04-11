@@ -391,20 +391,13 @@ class ContentRotator:
         self._neck_core_history.append(core_idx)
         self._neck_core_today.add(core_idx)
 
-        # Pick 1-2 auxiliary
-        num_aux = random.choice([1, 2])
-        aux_indices = []
-        for _ in range(num_aux):
-            aux_idx = self._pick_no_repeat(
-                len(neck_aux), self._neck_aux_history, max_history=1
-            )
-            self._neck_aux_history.append(aux_idx)
-            aux_indices.append(aux_idx)
+        # Pick 1 auxiliary
+        aux_idx = self._pick_no_repeat(
+            len(neck_aux), self._neck_aux_history, max_history=1
+        )
+        self._neck_aux_history.append(aux_idx)
 
-        combo = [neck_core[core_idx]]
-        for ai in aux_indices:
-            combo.append(neck_aux[ai])
-        return combo
+        return [neck_core[core_idx], neck_aux[aux_idx]]
 
     def next_sedentary_tip(self, current_hour: int = 14) -> Tip:
         """Return next sedentary activity, with time-of-day awareness."""
