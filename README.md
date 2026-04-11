@@ -65,7 +65,7 @@ codebreath exercise neck    # Do neck exercises now
 codebreath exercise outdoor # Noon outdoor reminder
 codebreath report           # Today's health report
 codebreath config           # Show configuration
-codebreath config set eye_interval_min 25  # Change setting
+codebreath config set eyeneck_interval_min 25  # Change setting
 codebreath lang zh          # Switch to Chinese (中文)
 codebreath lang en          # Switch back to English
 codebreath build-notifier   # Build native notification helper
@@ -78,8 +78,7 @@ Settings are stored in `~/.codebreath/config.json`:
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `eye_interval_min` | 30 | Minutes between eye care reminders |
-| `neck_interval_min` | 45 | Minutes between neck exercise reminders |
+| `eyeneck_interval_min` | 30 | Minutes between combined eye+neck reminders |
 | `sedentary_interval_min` | 60 | Minutes between sedentary break reminders |
 | `work_start_hour` | 9 | Working hours start (24h) |
 | `work_end_hour` | 19 | Working hours end (24h) |

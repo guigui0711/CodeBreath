@@ -241,8 +241,7 @@ def run_quick_exercise(category: str, tip: Tip, **kwargs):
 def display_status(
     is_running: bool,
     is_paused: bool,
-    next_eye: Optional[str] = None,
-    next_neck: Optional[str] = None,
+    next_eyeneck: Optional[str] = None,
     next_sedentary: Optional[str] = None,
     stats: Optional[dict] = None,
 ):
@@ -266,10 +265,8 @@ def display_status(
 
     if is_running:
         print()
-        if next_eye:
-            print(f"  👁  {t('status.next_eye')}     {next_eye}")
-        if next_neck:
-            print(f"  🦴  {t('status.next_neck')} {next_neck}")
+        if next_eyeneck:
+            print(f"  🧠  {t('status.next_eyeneck')}  {next_eyeneck}")
         if next_sedentary:
             print(f"  🚶  {t('status.next_sedentary')}   {next_sedentary}")
 
