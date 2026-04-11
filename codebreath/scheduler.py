@@ -660,23 +660,14 @@ class Scheduler:
                 parts = f.stem.split("_", 1)
                 meta = {"category": parts[0] if parts else "unknown", "tip_name": ""}
 
-            if action == "details":
-                panel_path = meta.get("panel_path", "")
+            if action in ("details", "dismissed") and meta.get("panel_path"):
+                panel_path = meta["panel_path"]
                 opened = open_detail_panel(panel_path)
                 self._debug_log(
-                    f"open details action=details opened={opened} panel_path={panel_path}"
+                    f"open details action={action} opened={opened} panel_path={panel_path}"
                 )
-                continue
-
-            # On macOS, clicking notification body may be reported as
-            # default action ("details") or dismissal depending on timing/style.
-            # For notifications with detail panels, treat dismiss as details.
-            if action == "dismissed" and meta.get("panel_path"):
-                panel_path = meta.get("panel_path", "")
-                opened = open_detail_panel(panel_path)
-                self._debug_log(
-                    f"open details action=dismissed opened={opened} panel_path={panel_path}"
-                )
+                # Send a follow-up notification so user can still mark done/skip
+                self._send_followup_notification(meta)
                 continue
 
             category = meta.get("category", "unknown")
@@ -697,6 +688,49 @@ class Scheduler:
                     pass
                 else:
                     self.log.add_event(category, meta.get("tip_name", ""), "skipped")
+
+    def _send_followup_notification(self, meta: dict):
+        """Send a follow-up notification after opening details, so user can still mark done/skip."""
+        from .i18n import get_language
+
+        lang = get_language()
+        category = meta.get("category", "unknown")
+
+        if lang == "zh":
+            title = "✅ 做完了吗？"
+            if category == "eye+neck":
+                subtitle = "护眼 + 颈肩"
+            elif category == "sedentary":
+                subtitle = "起来动动"
+            elif category == "outdoor":
+                subtitle = "户外时间"
+            else:
+                subtitle = ""
+            body = "看完详情后，记得标记完成状态"
+        else:
+            title = "✅ Did you do it?"
+            if category == "eye+neck":
+                subtitle = "Eye + Neck"
+            elif category == "sedentary":
+                subtitle = "Move Break"
+            elif category == "outdoor":
+                subtitle = "Go Outside"
+            else:
+                subtitle = ""
+            body = "Mark your completion after reviewing details"
+
+        resp_file = send_notification_trackable(
+            title=title,
+            subtitle=subtitle,
+            body=body,
+            category=f"{category}_followup",
+        )
+        if resp_file:
+            # Copy meta but remove panel_path so clicking this one
+            # won't loop into opening details again
+            followup_meta = {k: v for k, v in meta.items() if k != "panel_path"}
+            self._response_meta[resp_file] = followup_meta
+            self._debug_log(f"followup sent resp_file={resp_file} category={category}")
 
     def _in_working_hours(self, hour: int) -> bool:
         """Check if current hour is within working hours."""
