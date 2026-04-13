@@ -301,9 +301,9 @@ def cmd_config(args: List[str]) -> int:
         # Type conversion
         field_type = Config.__dataclass_fields__[key].type
         try:
-            if field_type == "bool":
+            if field_type in (bool, "bool"):
                 typed_value = value.lower() in ("true", "1", "yes")
-            elif field_type == "int":
+            elif field_type in (int, "int"):
                 typed_value = int(value)
             else:
                 typed_value = value
