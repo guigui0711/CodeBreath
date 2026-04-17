@@ -1,10 +1,18 @@
-__pycache__/
-*.py[cod]
-*.egg-info/
-dist/
+# Swift build artifacts
+.build/
+.swiftpm/
+*.xcodeproj/
+Packages/
+Package.resolved
 build/
-.eggs/
-*.egg
-.venv/
-venv/
 *.log
+
+# App icon intermediates (regenerate via make_icon.swift)
+CodeBreathApp/AppIcon.iconset/
+
+# Agent / editor session state
+.claude/
+.superpowers/
+
+# macOS
+.DS_Store

@@ -1,10 +1,10 @@
 # CodeBreath
 
-**A breath between your code.** Science-backed health guardian for developers.
+**A breath between your code.** Science-backed health guardian for developers — native macOS menu bar app.
 
-CodeBreath is an open-source CLI tool that sends rotating, evidence-based health reminders via macOS system notifications — covering eye care, neck exercises, and sedentary breaks. Every reminder tells you *what to do*, *why it helps*, and *what happens if you skip it*.
+CodeBreath is a menu bar–only app that gently guides you through eye, neck, and sedentary-break exercises while you work. Instead of system notifications, it shows a frosted-glass floating window with an embedded countdown ring so you can actually do the exercise in-the-moment.
 
-Zero external dependencies. Python 3 standard library only.
+Zero external dependencies. Pure Swift / SwiftUI. macOS 13+.
 
 ## Why
 
@@ -13,148 +13,108 @@ Zero external dependencies. Python 3 standard library only.
 - Sitting **8+ hours/day** without exercise increases all-cause mortality by **59%**
 - Indoor offices provide ~400 lux. Your eyes need **10,000+ lux** (outdoor light) to slow myopia progression
 
-CodeBreath addresses all of these with science-backed micro-interventions that take 20-60 seconds.
+CodeBreath addresses all of these with micro-interventions that take 20–60 seconds.
 
 ## Features
 
-- **Three reminder tracks** with independent intervals:
-  - 👁 Eye care (every 30 min) — 5 rotating methods: close eyes, palming, distance focus, blink exercise, eye rolls
-  - 🦴 Neck exercises (every 45 min) — 6 exercises (3 core + 3 auxiliary), randomly combined 2-3 per session
-  - 🚶 Sedentary breaks (every 60 min) — 7 activities with time-of-day awareness
-- **Noon outdoor reminder** — the single most impactful thing for high myopia control
-- **Content rotation** — every reminder differs from the last. Benefits and consequences also rotate from message pools
-- **macOS system notifications** — dual backend:
-  - **Native (recommended)**: Swift helper with persistent alert-style notifications and Done/Skip action buttons for completion tracking
-  - **Fallback**: `osascript` banners (auto-dismiss in ~5 seconds, no buttons)
-- **Completion tracking** — click "Done" or "Skip" on notifications to log whether you did the exercise
-- **Terminal interactive mode** — countdown timers with ASCII art exercise guides
-- **Daily health report** with completion stats and streaks
-- **Configurable** — intervals, working hours, all customizable
+- **Menu bar icon** (🫁 N/M) with live today-completed/total counter
+- **Popover panel** — today's stats, category breakdown, 7-day completion sparkline, pause & practice-now buttons
+- **Floating reminder window** — frosted-glass NSPanel with:
+  - Manual-start countdown ring (tap **Start**, not auto — respects your attention)
+  - Category icon, instructions, benefit box
+  - **Done** / **Skip** buttons; skip asks why (太忙 / 不在工位 / 不需要 / 稍后) for adaptive tuning
+  - ESC / ⌘W to close; 5-minute idle auto-skip; multi-step slide transitions when eye+neck merge with sedentary
+- **Flow protection** — defers the reminder when you're in Zoom / full-screen app / typing burst (60s > 80 keys) / Focus mode
+- **Three tracks** with independent intervals:
+  - 👁 Eye + 🦴 Neck combined (default 30 min)
+  - 🚶 Sedentary breaks (default 60 min) — time-of-day aware
+  - ☀️ Noon outdoor reminder (default 12:00)
+- **Content rotation** — 5 eye tips, 6 neck exercises, 7 sedentary activities, plus rotating benefit / consequence messages
+- **Working hours** enforcement + indefinite / timed pause
+- **Daily report** push notification (optional) with streak + category breakdown
+- **Auto-pause after 3 consecutive skips** — doesn't nag when you're clearly busy
+- **Bilingual** — English / 中文
 
-## Quick Start
-
-```bash
-# Clone the repo
-git clone https://github.com/guigui0711/CodeBreath.git
-cd CodeBreath
-
-# Build native notification helper (recommended)
-codebreath build-notifier
-
-# Run setup guide
-codebreath setup
-
-# Start the daemon
-python3 -m codebreath start
-
-# Or run in foreground to see logs
-python3 -m codebreath start -f
-```
-
-## Usage
+## Build and run
 
 ```bash
-codebreath start            # Start daemon in background
-codebreath start -f         # Start in foreground (see logs)
-codebreath stop             # Stop the daemon
-codebreath pause 15         # Pause reminders for 15 minutes
-codebreath resume           # Resume reminders
-codebreath status           # Show current status
-codebreath exercise eye     # Do an eye exercise now
-codebreath exercise neck    # Do neck exercises now
-codebreath exercise outdoor # Noon outdoor reminder
-codebreath report           # Today's health report
-codebreath config           # Show configuration
-codebreath config set eyeneck_interval_min 25  # Change setting
-codebreath lang zh          # Switch to Chinese (中文)
-codebreath lang en          # Switch back to English
-codebreath build-notifier   # Build native notification helper
-codebreath setup            # First-time setup guide
+cd CodeBreathApp
+./build.sh
+open build/CodeBreath.app
 ```
 
-## Configuration
+Requirements: macOS 13+, Xcode command-line tools (`xcode-select --install`).
 
-Settings are stored in `~/.codebreath/config.json`:
+The build script produces `CodeBreathApp/build/CodeBreath.app`, ad-hoc signed, with `LSUIElement=true` (menu bar only — no Dock icon).
 
-| Key | Default | Description |
-|-----|---------|-------------|
-| `eyeneck_interval_min` | 30 | Minutes between combined eye+neck reminders |
-| `sedentary_interval_min` | 60 | Minutes between sedentary break reminders |
-| `work_start_hour` | 9 | Working hours start (24h) |
-| `work_end_hour` | 19 | Working hours end (24h) |
-| `noon_reminder_enabled` | true | Enable noon outdoor reminder |
-| `language` | en | UI and content language (`en` or `zh`) |
+First launch migrates config + logs from the legacy `~/.codebreath/` location into `~/Library/Application Support/CodeBreath/`.
 
-## Language / 语言切换
+## Settings
 
-CodeBreath supports English and Chinese. All notifications, terminal UI, exercise instructions, and motivational messages are fully translated.
+Menu bar 🫁 → ⚙︎ opens a tabbed settings window:
+
+- **General** — Language (en/zh), Launch at login, Notification sound
+- **Reminders** — Intervals (eye+neck, sedentary), working hours, noon + daily report time
+- **Appearance** — Floating window position (center / top-right)
+
+## Data location
+
+- Config: `~/Library/Application Support/CodeBreath/config.json`
+- Daily logs: `~/Library/Application Support/CodeBreath/logs/YYYY-MM-DD.json`
+- Log events: `{ timestamp, category, tipName, action }` where action ∈ `notified` / `completed` / `skipped` / `deferred`
+
+## Icon
+
+The app icon (a purple→blue gradient squircle with a white SF Symbol lung) is generated by `CodeBreathApp/make_icon.swift`. To regenerate:
 
 ```bash
-# Switch to Chinese
-codebreath lang zh
-
-# Switch back to English
-codebreath lang en
+cd CodeBreathApp
+swift make_icon.swift AppIcon.iconset
+iconutil -c icns AppIcon.iconset -o AppIcon.icns
+./build.sh
 ```
 
-Restart the daemon after switching for the change to take effect.
-
-## Native Notifications (Recommended)
-
-By default, CodeBreath uses basic macOS `osascript` banners that auto-dismiss in ~5 seconds with no action buttons. For a better experience, build the native Swift notification helper:
-
-```bash
-# Build the helper (requires Xcode command-line tools)
-codebreath build-notifier
-
-# Or directly:
-./swift/build.sh
-```
-
-This gives you:
-- **Persistent notifications** that stay on screen until you interact with them
-- **Done / Skip buttons** — click to log whether you completed the exercise
-- **Completion tracking** in your daily health report
-
-### macOS Setup
-
-After building, configure macOS to use alert-style notifications:
-
-1. Open **System Settings > Notifications > CodeBreath**
-2. Set **Allow Notifications** = ON
-3. Set **Alert style** = **Alerts** (not "Banners")
-
-The "Alerts" style keeps notifications visible until you click a button. Without this, macOS will auto-dismiss them as banners.
-
-### Requirements
-
-- Xcode command-line tools (`xcode-select --install`)
-- macOS 12.0+
-
-## The Science
+## The science
 
 Every recommendation in CodeBreath is backed by peer-reviewed research:
 
-- **20-20-20 rule**: Talens-Estarelles et al., *Contact Lens & Anterior Eye*, 2023 (PMID: 35963776). Closing eyes achieves accommodation = 0, even better than looking far.
-- **Break frequency**: Redondo et al., 2025 (PMID: 40466853). Self-paced breaks work nearly as well as optimal-frequency breaks.
+- **Close-eye rest**: Talens-Estarelles et al., *Contact Lens & Anterior Eye*, 2023 (PMID: 35963776). Closing eyes achieves accommodation = 0, even better than looking far.
 - **Chin tuck**: Rehabilitation medicine gold standard for Forward Head Posture correction.
-- **Thoracic extension + scapular stabilization**: Kang et al., *Turk J Phys Med Rehabil*, 2021. RCT proving significant FHP improvement.
-- **Outdoor light & myopia**: Multiple RCTs showing 10,000+ lux exposure triggers retinal dopamine release, the strongest factor for slowing myopia progression.
-- **Sedentary behavior**: 2018 *Physical Activity Guidelines Advisory Committee Report*. Interrupting sitting improves cardiometabolic markers.
+- **Thoracic extension + scapular retraction**: Kang et al., *Turk J Phys Med Rehabil*, 2021 (RCT).
+- **Outdoor light & myopia**: Multiple RCTs showing 10,000+ lux exposure triggers retinal dopamine release — the strongest known factor for slowing myopia progression.
+- **Sedentary behavior**: 2018 *Physical Activity Guidelines Advisory Committee Report*.
 
-## Design Philosophy
+## Design philosophy
 
-1. **Non-blocking**: Notifications don't steal focus. You choose when to engage.
-2. **Variety**: No one follows reminders that say the same thing every time. Content rotates.
-3. **Motivation through understanding**: Every reminder explains *why* — both the benefit and the consequence of skipping.
-4. **Context-aware**: Post-lunch drowsiness? Get squats. Morning? Hydration focus. Windowless office? Eye rest defaults to closing eyes, not "look far away."
-5. **Zero friction**: No pip install, no dependencies, no config needed to start.
+1. **Flow-safe by default** — detect Zoom / full-screen / typing burst and defer automatically. Never interrupt a presentation.
+2. **In-the-moment guidance** — the countdown ring is right there; you're more likely to actually do the exercise than dismiss it.
+3. **Understand skip, don't fight it** — skip asks why; after 3 skips the app pauses itself.
+4. **Variety** — no reminder looks or sounds identical to the last.
+5. **Zero friction** — one `./build.sh`, one `open`, runs as a menu bar app forever.
 
-## Requirements
+## Architecture
 
-- macOS 12.0+
-- Python 3.9+
-- Xcode command-line tools (optional, for native notifications — `xcode-select --install`)
+Full design spec at [`docs/superpowers/specs/2026-04-16-codebreath-v2-design.md`](docs/superpowers/specs/2026-04-16-codebreath-v2-design.md). Source layout:
+
+```
+CodeBreathApp/
+├── Package.swift
+├── build.sh                     # assembles signed .app bundle
+├── make_icon.swift              # regenerates AppIcon.icns
+├── AppIcon.icns
+└── Sources/CodeBreathApp/
+    ├── CodeBreathApp.swift      # @main + MenuBarExtra + Settings scene
+    ├── MenuBarView.swift        # 🫁 + N/M label
+    ├── PopoverView.swift        # today card + sparkline + buttons
+    ├── FloatingReminderWindow.swift  # NSPanel + countdown ring + skip-reason overlay
+    ├── Scheduler.swift          # 3 tracks + merge + working hours + flow defer
+    ├── FlowDetector.swift       # screen-share / full-screen / keystroke / Focus signals
+    ├── Storage.swift            # config + daily logs + legacy migration + 7-day stats
+    ├── SettingsView.swift       # tabbed settings
+    ├── DailyReport.swift        # optional end-of-day summary notification
+    ├── DesignSystem.swift       # Radius / Spacing / Font tokens + PressableButtonStyle
+    └── Content.swift            # bilingual tip library (5 eye + 6 neck + 7 sedentary + noon)
+```
 
 ## License
 
