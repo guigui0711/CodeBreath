@@ -338,7 +338,7 @@ struct FloatingReminderView: View {
             HStack(spacing: 8) {
                 Image(systemName: symbol(for: cat))
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(categoryColor(cat))
+                    .foregroundColor(DS.categoryColor(cat))
                 Text(categoryLabel(cat, locale: vm.locale))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.secondary)
@@ -371,7 +371,7 @@ struct FloatingReminderView: View {
                 .trim(from: 0, to: CGFloat(max(0.001, min(1.0, vm.progressFraction))))
                 .stroke(
                     LinearGradient(
-                        colors: [categoryColor(cat), categoryColor(cat).opacity(0.6)],
+                        colors: [DS.categoryColor(cat), DS.categoryColor(cat).opacity(0.6)],
                         startPoint: .top, endPoint: .bottom
                     ),
                     style: StrokeStyle(lineWidth: 10, lineCap: .round)
@@ -395,7 +395,7 @@ struct FloatingReminderView: View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: "sparkles")
                 .font(.system(size: 12))
-                .foregroundColor(categoryColor(cat))
+                .foregroundColor(DS.categoryColor(cat))
                 .padding(.top, 2)
             Text(vm.currentTip.benefit.resolve(vm.locale))
                 .font(.system(size: 12))
@@ -403,7 +403,7 @@ struct FloatingReminderView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(12)
-        .background(categoryColor(cat).opacity(0.12))
+        .background(DS.categoryColor(cat).opacity(0.12))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
@@ -523,15 +523,6 @@ struct FloatingReminderView: View {
         case .neck: return "figure.cooldown"
         case .sedentary: return "figure.walk"
         case .noon: return "sun.max.fill"
-        }
-    }
-
-    private func categoryColor(_ category: TipCategory) -> Color {
-        switch category {
-        case .eye: return .blue
-        case .neck: return .purple
-        case .sedentary: return .green
-        case .noon: return .orange
         }
     }
 

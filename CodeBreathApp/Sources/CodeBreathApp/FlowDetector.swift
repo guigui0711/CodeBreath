@@ -26,7 +26,6 @@ final class FlowDetector {
         if isScreenSharingActive() { return 600 }   // 10 min
         if isFullscreenFrontmost()  { return 300 }  // 5 min
         if recentKeystrokeRate()  > keystrokeThreshold { return 180 }  // 3 min
-        if isFocusModeOn() { return 300 }           // 5 min
         return nil
     }
 
@@ -52,15 +51,10 @@ final class FlowDetector {
     }
 
     private func isFullscreenFrontmost() -> Bool {
-        // If the frontmost window fills the full screen (not visibleFrame), treat as fullscreen.
         guard let mainScreen = NSScreen.main else { return false }
         let frame = mainScreen.frame
-        let visible = mainScreen.visibleFrame
-        // If any app has a window matching screen.frame and not this app, likely fullscreen.
-        // Simple heuristic: frontmost app's activation policy + app name check.
         guard let front = NSWorkspace.shared.frontmostApplication else { return false }
         if front.bundleIdentifier == Bundle.main.bundleIdentifier { return false }
-        // CGWindow list: find topmost on-screen window by owner PID.
         let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
         guard let infoList = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else {
             return false
@@ -71,12 +65,9 @@ final class FlowDetector {
                   let boundsDict = info[kCGWindowBounds as String] as? [String: Any],
                   let bounds = CGRect(dictionaryRepresentation: boundsDict as CFDictionary)
             else { continue }
-            // Fullscreen = window covers the full screen (incl. menu bar region).
             if abs(bounds.width - frame.width) < 2 && abs(bounds.height - frame.height) < 2 {
                 return true
             }
-            // Also treat "covers visibleFrame exactly" as not fullscreen.
-            _ = visible
             break
         }
         return false
@@ -93,16 +84,5 @@ final class FlowDetector {
         let cutoff = Date().addingTimeInterval(-keystrokeWindow)
         keystrokeTimes.removeAll(where: { $0 < cutoff })
         return keystrokeTimes.count
-    }
-
-    private func isFocusModeOn() -> Bool {
-        // TODO: proper detection via INFocusStatusCenter requires entitlements.
-        // Approximate via reading Do-Not-Disturb preference (deprecated but still works on many Macs).
-        let defaults = UserDefaults(suiteName: "com.apple.ncprefs") ?? .standard
-        if let enabled = defaults.object(forKey: "dnd_prefs") as? Data, !enabled.isEmpty {
-            // Non-empty data suggests configured DND — heuristic only; returns false to avoid false positives.
-            return false
-        }
-        return false
     }
 }

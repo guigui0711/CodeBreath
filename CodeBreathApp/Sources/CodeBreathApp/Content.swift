@@ -187,70 +187,6 @@ enum ContentLibrary {
         ),
     ]
 
-    // MARK: Eye extra rotating messages
-
-    static let eyeExtraBenefits: [LocalizedText] = [
-        LocalizedText(
-            en: "20 seconds for 2 hours of clear vision — best ROI of your day.",
-            zh: "20 秒换 2 小时清晰视力——今天性价比最高的事。"
-        ),
-        LocalizedText(
-            en: "Your brain enters Default Mode Network when eyes close — creativity boost.",
-            zh: "闭眼时大脑进入默认模式网络——创造力提升。"
-        ),
-        LocalizedText(
-            en: "You also get 3 deep breaths — instant blood oxygen boost.",
-            zh: "顺便做 3 次深呼吸——血氧瞬间提升。"
-        ),
-        LocalizedText(
-            en: "Your eyes endure 12 hours of near-focus daily. They deserve this.",
-            zh: "你的眼睛每天承受 12 小时近距离工作，它值得休息。"
-        ),
-        LocalizedText(
-            en: "Consistent breaks reduce DES symptoms (p≤0.045, Valencia University 2023).",
-            zh: "坚持休息可减轻数码眼疲劳症状（p≤0.045，瓦伦西亚大学 2023）。"
-        ),
-        LocalizedText(
-            en: "High myopia + continuous near work = axial elongation risk. Break the cycle.",
-            zh: "高度近视 + 持续近距离用眼 = 眼轴增长风险。打断这个循环。"
-        ),
-        LocalizedText(
-            en: "This 20-second pause prevents the 3 PM headache-blurry-vision crash.",
-            zh: "这 20 秒能预防下午 3 点的头痛-模糊-注意力崩溃。"
-        ),
-    ]
-
-    static let eyeExtraConsequences: [LocalizedText] = [
-        LocalizedText(
-            en: "Skipping breaks → near-work-induced transient myopia (NITM) builds up.",
-            zh: "不休息→近距离工作诱发的暂时性近视（NITM）累积。"
-        ),
-        LocalizedText(
-            en: "By 3 PM: sore eyes, headache, focus gone. Productivity cliff incoming.",
-            zh: "到下午 3 点：眼酸、头痛、注意力归零。生产力断崖。"
-        ),
-        LocalizedText(
-            en: "High myopia: every skipped break adds to axial elongation stimulus.",
-            zh: "高度近视：每次跳过休息都在给眼轴增长加油。"
-        ),
-        LocalizedText(
-            en: "92% of screen users report at least 1 DES symptom. Don't add to the stat.",
-            zh: "92% 的屏幕用户至少有 1 个数码眼疲劳症状。别再加一个。"
-        ),
-        LocalizedText(
-            en: "Tear film breaks down without blinking — dry cornea → micro-abrasions.",
-            zh: "不眨眼泪膜就会破裂——角膜干燥→微损伤。"
-        ),
-        LocalizedText(
-            en: "Accommodative spasm now = needing stronger glasses later.",
-            zh: "现在的调节痉挛 = 以后需要更厚的镜片。"
-        ),
-        LocalizedText(
-            en: "No breaks for 4 hours straight → 30% decline in accommodative function.",
-            zh: "连续 4 小时不休息→调节功能下降 30%。"
-        ),
-    ]
-
     // MARK: Neck exercises — core (3)
 
     static let neckCore: [Tip] = [
@@ -559,29 +495,6 @@ enum ContentLibrary {
         )
     )
 
-    static let noonExtraMessages: [LocalizedText] = [
-        LocalizedText(
-            en: "Even on a cloudy day, outdoor light is 5,000-10,000 lux. Your office? ~400 lux.",
-            zh: "即使阴天，户外光照也有 5,000-10,000 勒克斯。你的办公室？大约 400。"
-        ),
-        LocalizedText(
-            en: "This is the single most impactful thing you can do for your eyes today.",
-            zh: "这是你今天能为眼睛做的最有价值的事。"
-        ),
-        LocalizedText(
-            en: "15 minutes of daylight also boosts serotonin. You'll code better after this.",
-            zh: "15 分钟日光还能提升血清素。回来写代码更高效。"
-        ),
-        LocalizedText(
-            en: "Your retina needs real sunlight — no artificial light can fully substitute.",
-            zh: "你的视网膜需要真正的阳光——人造光源无法完全替代。"
-        ),
-        LocalizedText(
-            en: "Outdoor time is the #1 evidence-based intervention for myopia control.",
-            zh: "户外时间是循证医学中排名第一的近视控制干预手段。"
-        ),
-    ]
-
     // MARK: - Selection API
 
     static func randomEyeTip() -> Tip {
@@ -619,17 +532,5 @@ enum ContentLibrary {
     /// The floating window steps through these as a single multi-step session.
     static func combinedEyeAndNeck() -> [Tip] {
         [randomEyeTip()] + neckCombo()
-    }
-
-    static func randomEyeExtraBenefit() -> LocalizedText {
-        eyeExtraBenefits.randomElement()!
-    }
-
-    static func randomEyeExtraConsequence() -> LocalizedText {
-        eyeExtraConsequences.randomElement()!
-    }
-
-    static func randomNoonExtraMessage() -> LocalizedText {
-        noonExtraMessages.randomElement()!
     }
 }

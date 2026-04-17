@@ -36,8 +36,7 @@ struct LogEvent: Codable, Hashable {
 struct DayStats {
     var completed: Int = 0
     var skipped: Int = 0
-    var notified: Int = 0
-    var byCategory: [String: (completed: Int, skipped: Int, notified: Int)] = [:]
+    var byCategory: [String: (completed: Int, skipped: Int)] = [:]
 
     var total: Int { completed + skipped }
 }
@@ -151,11 +150,10 @@ final class StorageManager: ObservableObject {
     private func statsForEvents(_ events: [LogEvent]) -> DayStats {
         var stats = DayStats()
         for ev in events {
-            var bucket = stats.byCategory[ev.category] ?? (0, 0, 0)
+            var bucket = stats.byCategory[ev.category] ?? (0, 0)
             switch ev.action {
             case "completed": stats.completed += 1; bucket.completed += 1
             case "skipped":   stats.skipped   += 1; bucket.skipped   += 1
-            case "notified":  stats.notified  += 1; bucket.notified  += 1
             default: break
             }
             stats.byCategory[ev.category] = bucket

@@ -123,7 +123,7 @@ struct PopoverView: View {
     }
 
     private func categoryCard(symbol: String, tint: Color, label: String, stats: DayStats, key: String) -> some View {
-        let bucket = stats.byCategory[key] ?? (completed: 0, skipped: 0, notified: 0)
+        let bucket = stats.byCategory[key] ?? (completed: 0, skipped: 0)
         let total = bucket.completed + bucket.skipped
         return VStack(spacing: DS.Spacing.xs) {
             Image(systemName: symbol)
