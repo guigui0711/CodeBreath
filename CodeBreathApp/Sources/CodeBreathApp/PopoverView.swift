@@ -10,6 +10,7 @@ struct PopoverView: View {
     private var locale: AppLocale { storage.config.locale }
 
     var body: some View {
+        let _ = storage.logVersion  // observe log writes to refresh stats/charts
         let stats = storage.todayStats()
         VStack(alignment: .leading, spacing: 14) {
             // Header
