@@ -299,6 +299,9 @@ struct FloatingReminderView: View {
                 Group {
                     VStack(alignment: .leading, spacing: DS.Spacing.lg) {
                         VStack(alignment: .leading, spacing: DS.Spacing.xs + 2) {
+                            if vm.currentTip.kind == .compound {
+                                comboChipRow
+                            }
                             Text(vm.currentTip.name.resolve(vm.locale))
                                 .font(DS.Font.title)
                             Text(vm.currentTip.instruction.resolve(vm.locale))
@@ -389,6 +392,36 @@ struct FloatingReminderView: View {
         }
         .frame(width: 140, height: 140)
         .frame(maxWidth: .infinity)
+    }
+
+    // Combo chip row: `[👁 Eye] + [🧍 Neck]` — makes "doing both at once" visually explicit.
+    private var comboChipRow: some View {
+        HStack(spacing: 6) {
+            chip(symbol: "eye.fill", label: vm.locale == .zh ? "眼" : "Eye", color: DS.categoryColor(.eye))
+            Text("+")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(.secondary)
+            chip(symbol: "figure.cooldown", label: vm.locale == .zh ? "颈" : "Neck", color: DS.categoryColor(.neck))
+            Text(vm.locale == .zh ? "同时进行" : "simultaneously")
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+                .padding(.leading, 4)
+        }
+        .padding(.bottom, 2)
+    }
+
+    private func chip(symbol: String, label: String, color: Color) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: symbol)
+                .font(.system(size: 10, weight: .semibold))
+            Text(label)
+                .font(.system(size: 11, weight: .medium))
+        }
+        .foregroundColor(color)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(color.opacity(0.14))
+        .clipShape(Capsule())
     }
 
     private var benefitBox: some View {
@@ -521,6 +554,7 @@ struct FloatingReminderView: View {
         switch category {
         case .eye: return "eye.fill"
         case .neck: return "figure.cooldown"
+        case .combo: return "figure.mind.and.body"
         case .sedentary: return "figure.walk"
         case .noon: return "sun.max.fill"
         }
@@ -532,6 +566,8 @@ struct FloatingReminderView: View {
         case (.eye, .en): return "Eye care"
         case (.neck, .zh): return "颈肩"
         case (.neck, .en): return "Neck & shoulders"
+        case (.combo, .zh): return "眼+颈联动"
+        case (.combo, .en): return "Eye + Neck Combo"
         case (.sedentary, .zh): return "起身活动"
         case (.sedentary, .en): return "Move"
         case (.noon, .zh): return "午间户外"

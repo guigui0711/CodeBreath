@@ -28,6 +28,7 @@ enum DS {
         switch c {
         case .eye:       return .blue
         case .neck:      return .purple
+        case .combo:     return Color(red: 0.45, green: 0.35, blue: 0.85) // violet, distinct from eye-blue/neck-purple
         case .sedentary: return .green
         case .noon:      return .orange
         }

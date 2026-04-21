@@ -47,6 +47,10 @@ final class StorageManager: ObservableObject {
     @Published var config: AppConfig {
         didSet { if config != oldValue { saveConfig() } }
     }
+    /// Bumped whenever a log event is written. Views that read today's stats
+    /// (menu bar counter, popover) observe this to refresh; otherwise the
+    /// 🫁 N/M pill freezes between config changes.
+    @Published private(set) var logVersion: Int = 0
 
     private let ioQueue = DispatchQueue(label: "com.codebreath.storage.io")
     private let appSupportDir: URL
@@ -94,6 +98,7 @@ final class StorageManager: ObservableObject {
                 try? data.write(to: url, options: .atomic)
             }
         }
+        DispatchQueue.main.async { [weak self] in self?.logVersion &+= 1 }
     }
 
     func todayStats() -> DayStats {

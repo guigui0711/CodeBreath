@@ -31,9 +31,15 @@ struct LocalizedText: Codable, Hashable {
 enum TipCategory: String, Codable, CaseIterable {
     case eye
     case neck
+    case combo      // NEW — compound eye+neck move
     case sedentary
     case noon
 }
+
+// MARK: - Difficulty & Kind (additive, defaulted)
+
+enum TipDifficulty: String, Codable { case easy, medium, hard }
+enum TipKind: String, Codable { case single, compound }
 
 // MARK: - Tip
 
@@ -46,6 +52,9 @@ struct Tip: Codable, Hashable, Identifiable {
     let consequence: LocalizedText
     let category: TipCategory
     let source: LocalizedText?
+    let difficulty: TipDifficulty
+    let kind: TipKind
+    let tags: [String]
 
     init(
         id: String,
@@ -55,7 +64,10 @@ struct Tip: Codable, Hashable, Identifiable {
         benefit: LocalizedText,
         consequence: LocalizedText,
         category: TipCategory,
-        source: LocalizedText? = nil
+        source: LocalizedText? = nil,
+        difficulty: TipDifficulty = .easy,
+        kind: TipKind = .single,
+        tags: [String] = []
     ) {
         self.id = id
         self.name = name
@@ -65,6 +77,9 @@ struct Tip: Codable, Hashable, Identifiable {
         self.consequence = consequence
         self.category = category
         self.source = source
+        self.difficulty = difficulty
+        self.kind = kind
+        self.tags = tags
     }
 }
 
@@ -184,6 +199,103 @@ enum ContentLibrary {
                 en: "Optometric exercise for extraocular muscle relaxation",
                 zh: "眼科眼外肌放松训练"
             )
+        ),
+        // --- New eye tips ---
+        Tip(
+            id: "eye.figure8",
+            name: LocalizedText(en: "Figure-8 Tracking", zh: "8 字追踪"),
+            instruction: LocalizedText(
+                en: "Imagine a horizontal figure-8 (∞) in front of you. Trace it smoothly with your eyes, 3 loops one direction, 3 loops the other.",
+                zh: "想象眼前有一个横向的 8 字（∞）。眼睛慢慢追踪，一个方向 3 圈，反方向 3 圈。"
+            ),
+            durationSeconds: 30,
+            benefit: LocalizedText(
+                en: "Activates all 6 extraocular muscles through full range. Smooth-pursuit training improves eye movement control.",
+                zh: "让 6 条眼外肌在完整范围内激活。平滑追视训练改善眼球运动控制。"
+            ),
+            consequence: LocalizedText(
+                en: "Pursuit accuracy decays with prolonged fixation. Your eyes forget how to smoothly follow moving targets.",
+                zh: "长时间固定注视使追视精度下降。眼睛逐渐忘记如何平滑追随移动目标。"
+            ),
+            category: .eye,
+            source: LocalizedText(
+                en: "Scheiman & Wick, Clinical Management of Binocular Vision, 5th ed., 2019",
+                zh: "Scheiman & Wick, Clinical Management of Binocular Vision, 第 5 版, 2019"
+            ),
+            difficulty: .easy,
+            tags: ["saccade", "ROM"]
+        ),
+        Tip(
+            id: "eye.2020",
+            name: LocalizedText(en: "20-20-20 Rule", zh: "20-20-20 法则"),
+            instruction: LocalizedText(
+                en: "Look at something at least 20 feet (6 m) away for 20 seconds. Let your eyes fully disengage from the screen.",
+                zh: "看向至少 6 米远处的物体，持续 20 秒。让眼睛彻底脱离屏幕。"
+            ),
+            durationSeconds: 20,
+            benefit: LocalizedText(
+                en: "AAO-recommended cornerstone for digital eye strain. Fully relaxes ciliary muscle; lowers near-focus accommodation demand to zero.",
+                zh: "美国眼科学会（AAO）推荐的数字眼疲劳基础方案。彻底放松睫状肌，让近距离调节需求归零。"
+            ),
+            consequence: LocalizedText(
+                en: "Without periodic distance focus, the ciliary muscle stays clamped in near-focus, accelerating myopia and accommodative fatigue.",
+                zh: "缺少定期远眺，睫状肌持续锁死在近距离调节状态，加速近视进展和调节性疲劳。"
+            ),
+            category: .eye,
+            source: LocalizedText(
+                en: "American Academy of Ophthalmology (AAO) digital eye strain guideline",
+                zh: "美国眼科学会（AAO）数字眼疲劳指南"
+            ),
+            difficulty: .easy,
+            tags: ["dryeye", "AAO", "relaxation"]
+        ),
+        Tip(
+            id: "eye.convergence",
+            name: LocalizedText(en: "Pencil Push-Ups", zh: "铅笔推拉（集合训练）"),
+            instruction: LocalizedText(
+                en: "Hold a pen at arm's length at eye level. Slowly bring it toward your nose while keeping it in sharp single focus. Stop when it doubles. Repeat 10 times.",
+                zh: "手臂伸直，拿一支笔在眼前。慢慢把笔推向鼻尖，始终保持清晰单一视像，出现重影就停。重复 10 次。"
+            ),
+            durationSeconds: 40,
+            benefit: LocalizedText(
+                en: "Trains binocular convergence and medial rectus endurance — often weak in heavy screen users with convergence insufficiency.",
+                zh: "训练双眼集合功能和内直肌耐力——重度屏幕用户常见的集合不足就靠它。"
+            ),
+            consequence: LocalizedText(
+                en: "Convergence insufficiency causes reading fatigue, eyestrain headaches, and transient double vision.",
+                zh: "集合不足导致阅读疲劳、眼酸性头痛、短暂复视。"
+            ),
+            category: .eye,
+            source: LocalizedText(
+                en: "Scheiman & Wick, Clinical Management of Binocular Vision, 5th ed., 2019",
+                zh: "Scheiman & Wick, Clinical Management of Binocular Vision, 第 5 版, 2019"
+            ),
+            difficulty: .medium,
+            tags: ["binocular"]
+        ),
+        Tip(
+            id: "eye.saccades",
+            name: LocalizedText(en: "Horizontal Saccades", zh: "水平扫视"),
+            instruction: LocalizedText(
+                en: "Pick two targets ~1 m apart (e.g. two corners of your monitor). Snap gaze rapidly between them — 20 shifts, keeping head still.",
+                zh: "选两个大约 1 米间距的目标（比如显示器两角）。头不动，眼睛快速在两点之间切换 20 次。"
+            ),
+            durationSeconds: 30,
+            benefit: LocalizedText(
+                en: "Improves saccadic latency and precision — the rapid eye jumps critical for reading and code scanning.",
+                zh: "改善扫视潜伏期和精度——阅读和看代码时大量用到的快速跳视。"
+            ),
+            consequence: LocalizedText(
+                en: "Slowed saccades increase reading time and cognitive fatigue. Users with poor saccades re-read lines unconsciously.",
+                zh: "扫视变慢增加阅读耗时和认知疲劳。扫视差的人会不自觉地重读行。"
+            ),
+            category: .eye,
+            source: LocalizedText(
+                en: "Scheiman & Wick, Clinical Management of Binocular Vision, 5th ed., 2019",
+                zh: "Scheiman & Wick, Clinical Management of Binocular Vision, 第 5 版, 2019"
+            ),
+            difficulty: .medium,
+            tags: ["saccade"]
         ),
     ]
 
@@ -326,6 +438,103 @@ enum ContentLibrary {
                 en: "Muscle relaxation technique for trapezius",
                 zh: "斜方肌肌肉放松技术"
             )
+        ),
+        // --- New neck tips ---
+        Tip(
+            id: "neck.deep_flexor_hold",
+            name: LocalizedText(en: "Deep Cervical Flexor Hold", zh: "深层颈屈肌保持"),
+            instruction: LocalizedText(
+                en: "Sit tall. Perform a gentle chin tuck (~20% effort) and hold for 20 seconds. Breathe normally. Release. Repeat twice.",
+                zh: "坐直，轻微收下巴（约 20% 力度），保持 20 秒，正常呼吸。放松，重复 2 次。"
+            ),
+            durationSeconds: 50,
+            benefit: LocalizedText(
+                en: "Low-load endurance training for deep cervical flexors — the \"core\" of the neck. Directly addresses Forward Head Posture.",
+                zh: "低负荷激活深层颈屈肌——颈椎的「核心肌」。直接针对头前伸。"
+            ),
+            consequence: LocalizedText(
+                en: "Deep flexor weakness shifts load to superficial muscles (SCM, upper trap) → chronic tension, tension headaches.",
+                zh: "深层颈屈肌无力，负荷转移到浅层肌群（胸锁乳突肌、上斜方肌）→ 慢性紧张、紧张型头痛。"
+            ),
+            category: .neck,
+            source: LocalizedText(
+                en: "Jull G, O'Leary SP, Falla DL, J Manipulative Physiol Ther, 2008",
+                zh: "Jull G, O'Leary SP, Falla DL, J Manipulative Physiol Ther, 2008"
+            ),
+            difficulty: .easy,
+            tags: ["FHP", "DCF"]
+        ),
+        Tip(
+            id: "neck.levator_stretch",
+            name: LocalizedText(en: "Levator Scapulae Stretch", zh: "提肩胛肌拉伸"),
+            instruction: LocalizedText(
+                en: "Turn head 45° to the right. Look down toward your right armpit. Use right hand to gently deepen the stretch. Hold 20 s. Switch.",
+                zh: "头向右转 45°，低头看向右侧腋窝。右手轻压头顶加深拉伸，保持 20 秒。换边。"
+            ),
+            durationSeconds: 45,
+            benefit: LocalizedText(
+                en: "Targets the levator scapulae — the muscle responsible for that chronic \"knot\" at the shoulder blade's top corner.",
+                zh: "精准拉伸提肩胛肌——就是那块肩胛骨上角「结节」的慢性疼痛源。"
+            ),
+            consequence: LocalizedText(
+                en: "Tight levator scapulae limits neck rotation and referred pain radiates up to the base of the skull.",
+                zh: "提肩胛肌紧张限制颈部旋转，放射痛蔓延到枕骨下缘。"
+            ),
+            category: .neck,
+            source: LocalizedText(
+                en: "Standard PT levator scapulae stretch protocol",
+                zh: "物理治疗提肩胛肌标准拉伸方案"
+            ),
+            difficulty: .easy,
+            tags: ["ROM"]
+        ),
+        Tip(
+            id: "neck.wall_angel",
+            name: LocalizedText(en: "Wall Angels", zh: "靠墙天使"),
+            instruction: LocalizedText(
+                en: "Stand with back against wall, heels 10cm out. Press lower back, upper back, and head to wall. Arms up in \"goalpost\" shape, slide up and down slowly 8 times.",
+                zh: "背靠墙站，脚后跟离墙 10 厘米。腰、上背、后脑贴墙。双臂举成「门框」形，沿墙慢慢上下滑动 8 次。"
+            ),
+            durationSeconds: 60,
+            benefit: LocalizedText(
+                en: "Activates mid/lower trapezius and rhomboids while mobilizing the thoracic spine — full upper-body posture reset.",
+                zh: "激活中下斜方肌和菱形肌，同时松动胸椎——上半身姿态完整重置。"
+            ),
+            consequence: LocalizedText(
+                en: "Without mid/lower trap activation, upper trap dominates — the classic \"turtle neck + rounded shoulder\" posture.",
+                zh: "缺少中下斜方肌激活，上斜方肌代偿——典型的「乌龟颈 + 圆肩」。"
+            ),
+            category: .neck,
+            source: LocalizedText(
+                en: "Modern shoulder rehab protocol (scapular stabilization)",
+                zh: "现代肩部康复方案（肩胛骨稳定性训练）"
+            ),
+            difficulty: .medium,
+            tags: ["FHP", "ROM"]
+        ),
+        Tip(
+            id: "neck.doorway_pec_stretch",
+            name: LocalizedText(en: "Doorway Pec Stretch", zh: "门框胸肌拉伸"),
+            instruction: LocalizedText(
+                en: "Stand in a doorway. Place forearms on the doorframe at shoulder height. Step one foot forward and lean gently until you feel a chest stretch. Hold 30 s.",
+                zh: "站在门框前，两前臂贴门框，肘部与肩同高。迈出一只脚，身体前倾直到感觉胸部拉伸，保持 30 秒。"
+            ),
+            durationSeconds: 45,
+            benefit: LocalizedText(
+                en: "Opens the anterior chest (pec minor/major) — the root cause of rounded shoulders that drive forward head posture.",
+                zh: "打开胸前肌群（胸小肌/胸大肌）——圆肩的根源，进而引发头前伸。"
+            ),
+            consequence: LocalizedText(
+                en: "Tight pecs pull the shoulders forward, locking the thoracic spine in kyphosis and forcing neck compensation.",
+                zh: "胸肌紧绷把肩膀向前拉，胸椎锁在后凸位，迫使颈椎代偿。"
+            ),
+            category: .neck,
+            source: LocalizedText(
+                en: "Standard PT pec minor stretch for FHP correction",
+                zh: "矫正头前伸的标准胸小肌拉伸"
+            ),
+            difficulty: .easy,
+            tags: ["FHP"]
         ),
     ]
 
@@ -470,6 +679,261 @@ enum ContentLibrary {
         (17..<20, [1, 0, 6]),  // Late afternoon
     ]
 
+    // MARK: Combo tips (eye + neck simultaneously) — 10 compound moves
+
+    static let comboTips: [Tip] = [
+        Tip(
+            id: "combo.gaze_rotation",
+            name: LocalizedText(en: "Gaze-Follow Neck Rotation", zh: "转头远眺跟随"),
+            instruction: LocalizedText(
+                en: "Pick a distant target (≥3m). Slowly rotate head left ~45° while eyes stay locked on the target. Hold 3s. Return. Repeat right. 3× each side.",
+                zh: "选一个 3 米以上的远处目标。慢慢向左转头约 45°，眼睛始终盯着目标。保持 3 秒，回正。换右侧。每侧 3 次。"
+            ),
+            durationSeconds: 45,
+            benefit: LocalizedText(
+                en: "VOR×1 gaze-stability drill: trains cervico-ocular coupling + cervical ROM + ciliary relaxation from distance fixation — three root fixes in one move.",
+                zh: "前庭-眼反射（VOR×1）训练：同时训练颈-眼协调、颈椎活动度、远眺放松睫状肌——三个根本问题一次解决。"
+            ),
+            consequence: LocalizedText(
+                en: "Decoupled eye+neck movement is a hallmark of chronic neck pain and cervicogenic dizziness.",
+                zh: "眼-颈协调解耦是慢性颈痛和颈源性头晕的典型特征。"
+            ),
+            category: .combo,
+            source: LocalizedText(
+                en: "Herdman, Vestibular Rehabilitation 4th ed., 2014; Talens-Estarelles et al., 2023",
+                zh: "Herdman, Vestibular Rehabilitation 第 4 版, 2014；Talens-Estarelles 等, 2023"
+            ),
+            difficulty: .medium,
+            kind: .compound,
+            tags: ["vestibular", "ROM", "dryeye"]
+        ),
+        Tip(
+            id: "combo.chintuck_focus",
+            name: LocalizedText(en: "Chin-Tuck + Distance Focus", zh: "收下巴远眺"),
+            instruction: LocalizedText(
+                en: "Find the farthest point in the room. While softly gazing at it, perform a chin tuck (double chin). Hold 5s. Release. Repeat 6×.",
+                zh: "找到房间最远的一个点，柔和地看着它，同时收下巴（做出双下巴）。保持 5 秒，放松。重复 6 次。"
+            ),
+            durationSeconds: 40,
+            benefit: LocalizedText(
+                en: "Two gold-standard moves stacked: chin tuck (FHP correction) + distance focus (ciliary release). Root-cause fix for both the screen neck and the screen eye.",
+                zh: "两个金标准动作同时做：收下巴（矫正头前伸）+ 远眺（放松睫状肌）。屏幕颈和屏幕眼的双根治。"
+            ),
+            consequence: LocalizedText(
+                en: "FHP + near-focus lock is the exact posture that creates both neck pain and accommodative myopia — do nothing and both compound.",
+                zh: "头前伸 + 近距离锁定，正是导致颈痛和调节性近视的组合姿势——不管就是双重恶化。"
+            ),
+            category: .combo,
+            source: LocalizedText(
+                en: "Kang et al., Turk J Phys Med Rehabil, 2021 + Talens-Estarelles et al., 2023",
+                zh: "Kang 等, Turk J Phys Med Rehabil, 2021 + Talens-Estarelles 等, 2023"
+            ),
+            difficulty: .easy,
+            kind: .compound,
+            tags: ["FHP", "dryeye", "relaxation"]
+        ),
+        Tip(
+            id: "combo.figure8_lateral",
+            name: LocalizedText(en: "Figure-8 Eye + Lateral Neck Stretch", zh: "8 字眼球 + 侧颈拉伸"),
+            instruction: LocalizedText(
+                en: "Tilt head gently to left shoulder (ear toward shoulder). While holding the stretch, trace a slow horizontal figure-8 with your eyes, 3 loops. Switch side, 3 loops.",
+                zh: "轻轻把头向左肩倾斜（耳朵靠肩膀）。保持拉伸的同时，眼睛慢慢画横向 8 字，3 圈。换边，再 3 圈。"
+            ),
+            durationSeconds: 50,
+            benefit: LocalizedText(
+                en: "Static stretch of upper trapezius/scalene + extraocular muscle activation through full ROM — simultaneously releases stiff neck and frozen eyes.",
+                zh: "上斜方肌/斜角肌静态拉伸 + 眼外肌全范围激活——同时释放僵硬的脖子和冻住的眼睛。"
+            ),
+            consequence: LocalizedText(
+                en: "Both systems stiffen in parallel during screen work. Treating them together is twice as efficient.",
+                zh: "盯屏幕时两个系统平行僵化，一起处理效率翻倍。"
+            ),
+            category: .combo,
+            source: LocalizedText(
+                en: "Scheiman & Wick 2019 + standard upper trap stretch",
+                zh: "Scheiman & Wick 2019 + 上斜方肌标准拉伸"
+            ),
+            difficulty: .medium,
+            kind: .compound,
+            tags: ["ROM", "saccade"]
+        ),
+        Tip(
+            id: "combo.vor_x1",
+            name: LocalizedText(en: "VOR×1 Horizontal Gaze Stability", zh: "水平凝视稳定 VOR×1"),
+            instruction: LocalizedText(
+                en: "Hold thumb at arm's length, eye-level. Keep eyes locked on thumb while rotating head \"no-no-no\" for 15s. Then vertically \"yes-yes-yes\" for 15s.",
+                zh: "拇指伸直举到眼前。眼睛始终盯着拇指，头像说「不不不」一样左右转 15 秒。再像说「是是是」一样上下点 15 秒。"
+            ),
+            durationSeconds: 30,
+            benefit: LocalizedText(
+                en: "Gold-standard vestibular rehab drill (Cawthorne-Cooksey). Trains gaze stability + cervical proprioception simultaneously.",
+                zh: "前庭康复金标准动作（Cawthorne-Cooksey）。同时训练凝视稳定和颈椎本体感觉。"
+            ),
+            consequence: LocalizedText(
+                en: "Poor VOR causes motion sensitivity, visual vertigo, and reading fatigue on moving vehicles or when shifting gaze.",
+                zh: "前庭-眼反射差导致晕动症、视觉性头晕、乘车阅读疲劳。"
+            ),
+            category: .combo,
+            source: LocalizedText(
+                en: "Herdman, Vestibular Rehabilitation 4th ed., 2014",
+                zh: "Herdman, Vestibular Rehabilitation 第 4 版, 2014"
+            ),
+            difficulty: .hard,
+            kind: .compound,
+            tags: ["vestibular", "activating"]
+        ),
+        Tip(
+            id: "combo.scapular_2020",
+            name: LocalizedText(en: "Scapular Squeeze + 20/20/20", zh: "肩胛内收 + 20 秒远眺"),
+            instruction: LocalizedText(
+                en: "Squeeze your shoulder blades together (pencil between them). Simultaneously stare at an object ≥6m away for 20s. Release. Repeat once.",
+                zh: "两侧肩胛骨用力向中间夹紧（夹住一支铅笔的感觉）。同时盯着 6 米以外的物体 20 秒。放松，重复 1 次。"
+            ),
+            durationSeconds: 45,
+            benefit: LocalizedText(
+                en: "Combines two evidence-based moves already in this app: scapular retraction (rounded-shoulder fix) + 20/20/20 (AAO dry-eye rule). Two birds, one stone.",
+                zh: "把本 app 里两个循证动作合并：肩胛内收（矫正圆肩）+ 20/20/20（AAO 干眼防治规则）。一箭双雕。"
+            ),
+            consequence: LocalizedText(
+                en: "Rounded shoulders + near-focus lock is the complete screen-worker posture pathology — skip this and both cascade.",
+                zh: "圆肩 + 近距离锁定，是屏幕族姿势病理的完整画像——不做就双向恶化。"
+            ),
+            category: .combo,
+            source: LocalizedText(
+                en: "Cools et al., Br J Sports Med, 2014 + AAO digital eye strain guideline",
+                zh: "Cools 等, Br J Sports Med, 2014 + AAO 数字眼疲劳指南"
+            ),
+            difficulty: .easy,
+            kind: .compound,
+            tags: ["FHP", "dryeye"]
+        ),
+        Tip(
+            id: "combo.eye_led_rotation",
+            name: LocalizedText(en: "Eye-Led Neck Rotation", zh: "眼先动，颈跟随"),
+            instruction: LocalizedText(
+                en: "Sit upright. Without moving head, look fully left (hold 2s). Let head follow the eyes into full left rotation (hold 3s). Reverse to return. Repeat right. 2× each.",
+                zh: "坐直，头不动，眼睛先看向最左（停 2 秒）。然后让头跟着眼睛转到最左（停 3 秒）。反向回正。换右侧。每侧 2 次。"
+            ),
+            durationSeconds: 50,
+            benefit: LocalizedText(
+                en: "Reinstates the natural \"eyes-lead-neck\" motor pattern, broken in FHP users who crank the neck first. Plus activates all extraocular muscles through full ROM.",
+                zh: "重建自然的「眼先动、颈跟随」运动模式——头前伸族的这个模式是坏的（他们先扭脖子）。同时让眼外肌走完整范围。"
+            ),
+            consequence: LocalizedText(
+                en: "Compensating with neck-first movement overloads cervical joints and skips the ocular pre-alignment step that protects the spine.",
+                zh: "颈先动代偿过度使颈椎负荷，跳过眼球预对齐步骤，少了一道保护脊柱的关节缓冲。"
+            ),
+            category: .combo,
+            source: LocalizedText(
+                en: "Jull G et al., J Orthop Res, 2007 (cervical rehab protocol)",
+                zh: "Jull G 等, J Orthop Res, 2007（颈椎康复方案）"
+            ),
+            difficulty: .hard,
+            kind: .compound,
+            tags: ["vestibular", "ROM"]
+        ),
+        Tip(
+            id: "combo.palming_dcf",
+            name: LocalizedText(en: "Palming + Deep Cervical Flexor Hold", zh: "掌心敷眼 + 深层颈屈肌激活"),
+            instruction: LocalizedText(
+                en: "Rub palms together 5s until warm. Cup them over closed eyes. Simultaneously perform a gentle chin tuck (~20% effort) and hold 20s. Release carefully. Repeat once.",
+                zh: "双手搓热 5 秒。轻轻捂在闭眼上。同时做一个轻微的收下巴动作（约 20% 力度），保持 20 秒。缓慢放松，重复 1 次。"
+            ),
+            durationSeconds: 45,
+            benefit: LocalizedText(
+                en: "Dark-adapted eye relaxation + low-load deep cervical flexor training. Combines parasympathetic calm with precise motor retraining.",
+                zh: "暗适应放松眼睛 + 低负荷激活深层颈屈肌。副交感放松和精准运动控制一起来。"
+            ),
+            consequence: LocalizedText(
+                en: "Without periodic DCF engagement, superficial neck muscles dominate — chronic tension despite rest.",
+                zh: "缺乏深层颈屈肌激活，浅层颈肌代偿——即使休息也持续紧张。"
+            ),
+            category: .combo,
+            source: LocalizedText(
+                en: "Classic palming + Jull et al., J Manipulative Physiol Ther, 2008",
+                zh: "经典掌心敷眼 + Jull 等, J Manipulative Physiol Ther, 2008"
+            ),
+            difficulty: .medium,
+            kind: .compound,
+            tags: ["relaxation", "FHP", "DCF"]
+        ),
+        Tip(
+            id: "combo.gaze_recognition",
+            name: LocalizedText(en: "Gaze-Direction Recognition", zh: "眼指方向 + 头回正"),
+            instruction: LocalizedText(
+                en: "Close eyes. Rotate head comfortably left. Open eyes — note where your gaze naturally lands. Close eyes, return head to neutral, verify gaze centers. Repeat: right, up, down.",
+                zh: "闭眼，头慢慢转向左侧（舒适位）。睁眼——注意眼睛落在哪里。闭眼，把头转回正中，睁眼检查是否对齐正前方。换右侧、上、下各一次。"
+            ),
+            durationSeconds: 60,
+            benefit: LocalizedText(
+                en: "Trains cervical joint position sense — the proprioceptive \"GPS\" of your neck. Clinically proven for chronic neck pain and cervicogenic headache.",
+                zh: "训练颈椎关节位置觉——脖子的本体感觉「GPS」。临床证明对慢性颈痛和颈源性头痛有效。"
+            ),
+            consequence: LocalizedText(
+                en: "Impaired cervical position sense → chronic low-grade whiplash-like symptoms, poor head-on-body awareness, recurring strain.",
+                zh: "颈椎位置觉受损 → 慢性低级别「挥鞭伤样」症状、头身协调差、反复劳损。"
+            ),
+            category: .combo,
+            source: LocalizedText(
+                en: "Revel M et al., Arch Phys Med Rehabil, 1991 (GDR protocol)",
+                zh: "Revel M 等, Arch Phys Med Rehabil, 1991（眼方向识别方案）"
+            ),
+            difficulty: .hard,
+            kind: .compound,
+            tags: ["proprioception", "FHP"]
+        ),
+        Tip(
+            id: "combo.thoracic_sweep",
+            name: LocalizedText(en: "Thoracic Extension + Eye Sweep", zh: "胸椎伸展 + 上下扫视"),
+            instruction: LocalizedText(
+                en: "Clasp hands behind head. Gently arch upper back over chair back while slowly looking up at the ceiling. Slowly return while looking down at the floor. Repeat 5×.",
+                zh: "双手交叉放脑后。上背部轻轻向后弓在椅背上，同时慢慢抬头看天花板。慢慢回到原位时低头看地板。重复 5 次。"
+            ),
+            durationSeconds: 50,
+            benefit: LocalizedText(
+                en: "Thoracic extension opens kyphosis (fixes neck compensation at the root); vertical smooth-pursuit activates superior/inferior recti through full range.",
+                zh: "胸椎伸展打开后凸（从根源解决颈椎代偿）；垂直平滑追视让上下直肌走完整范围。"
+            ),
+            consequence: LocalizedText(
+                en: "Thoracic kyphosis forces the neck into forward compensation, and vertical eye ROM atrophies from always-horizontal screen gaze.",
+                zh: "胸椎后凸迫使颈椎前伸代偿，加上总是水平看屏幕，垂直眼动范围退化。"
+            ),
+            category: .combo,
+            source: LocalizedText(
+                en: "Kang et al., Turk J Phys Med Rehabil, 2021 + pursuit EOM training",
+                zh: "Kang 等, Turk J Phys Med Rehabil, 2021 + 追视眼外肌训练"
+            ),
+            difficulty: .medium,
+            kind: .compound,
+            tags: ["FHP", "ROM", "saccade"]
+        ),
+        Tip(
+            id: "combo.wall_saccades",
+            name: LocalizedText(en: "Wall-Stand Horizontal Saccades", zh: "靠墙站 + 水平扫视"),
+            instruction: LocalizedText(
+                en: "Stand with back against wall — head, shoulders, butt, heels all touching. Hold head perfectly still; snap gaze between two targets ~1m apart horizontally, 20 shifts.",
+                zh: "背靠墙站——后脑、肩胛、臀、脚后跟都贴墙。头绝对不动，眼睛在约 1 米间距的两个水平目标间快速切换 20 次。"
+            ),
+            durationSeconds: 50,
+            benefit: LocalizedText(
+                en: "Full postural reset + saccadic training. Also builds head-eye dissociation — the skill of moving eyes without neck compensating.",
+                zh: "全身姿态重置 + 扫视训练。还训练头-眼分离——眼睛独立动而不用脖子代偿。"
+            ),
+            consequence: LocalizedText(
+                en: "Users who can't hold head-still while moving eyes have lost head-eye dissociation — a hidden driver of neck strain.",
+                zh: "头动则眼动、不能分离的人，头-眼分离能力已丢——颈椎劳损的隐藏推手。"
+            ),
+            category: .combo,
+            source: LocalizedText(
+                en: "Existing wall-stand (app) + Scheiman & Wick 2019 saccade training",
+                zh: "本 app 靠墙站 + Scheiman & Wick 2019 扫视训练"
+            ),
+            difficulty: .hard,
+            kind: .compound,
+            tags: ["saccade", "posture", "activating"]
+        ),
+    ]
+
     // MARK: Noon outdoor
 
     static let noonOutdoor = Tip(
@@ -495,42 +959,154 @@ enum ContentLibrary {
         )
     )
 
-    // MARK: - Selection API
+    // MARK: - Selection API (recency-aware, weighted)
+
+    /// All neck tips (core + aux collapsed for the selector).
+    static var allNeckTips: [Tip] { neckCore + neckAux }
 
     static func randomEyeTip() -> Tip {
-        eyeTips.randomElement()!
+        TipSelector.shared.pick(from: eyeTips, category: .eye)
     }
 
     static func randomNeckExercise() -> Tip {
-        neckCore.randomElement()!
+        TipSelector.shared.pick(from: allNeckTips, category: .neck)
     }
 
     static func randomNeckAux() -> Tip {
-        neckAux.randomElement()!
+        TipSelector.shared.pick(from: neckAux, category: .neck)
     }
 
     /// Return a core + auxiliary pair — matches Python `next_neck_combo` shape.
+    /// Guarantees the two tips are different IDs.
     static func neckCombo() -> [Tip] {
-        [randomNeckExercise(), randomNeckAux()]
+        let a = TipSelector.shared.pick(from: neckCore, category: .neck)
+        let pool = neckAux.filter { $0.id != a.id }
+        let b = TipSelector.shared.pick(from: pool.isEmpty ? neckAux : pool, category: .neck)
+        return [a, b]
     }
 
-    /// Time-aware sedentary break. If `forHour` matches a preference window, pick
-    /// from that window; otherwise pick uniformly at random.
+    /// Time-aware sedentary break (keeps original hour-preference table as a pool hint
+    /// but applies recency buffer + weighting on top).
     static func sedentaryBreak(forHour hour: Int) -> Tip {
+        let pool: [Tip]
         if let pref = sedentaryTimePreferences.first(where: { $0.hours.contains(hour) }) {
-            let idx = pref.indices.randomElement() ?? 0
-            return sedentaryTips[idx]
+            pool = pref.indices.map { sedentaryTips[$0] }
+        } else {
+            pool = sedentaryTips
         }
-        return sedentaryTips.randomElement()!
+        return TipSelector.shared.pick(from: pool, category: .sedentary)
     }
 
     static func noonReminder() -> Tip {
         noonOutdoor
     }
 
-    /// Combined eye + neck reminder — returns an eye tip plus a neck core/aux pair.
-    /// The floating window steps through these as a single multi-step session.
+    /// Pick a single compound (eye+neck) tip via recency-aware selector.
+    static func randomComboTip() -> Tip {
+        TipSelector.shared.pick(from: comboTips, category: .combo)
+    }
+
+    /// Combined eye + neck reminder.
+    ///
+    /// **Primary path**: returns `[comboTip]` — a single compound move that trains
+    /// both systems simultaneously (evidence: cervico-ocular coupling,
+    /// Kristjansson & Treleaven 2009; Jull et al. 2007; Herdman 2014).
+    ///
+    /// **Legacy 3-step fallback** is still selected ~15% of the time to preserve
+    /// variety on the format itself (prevents combo from becoming the new habituated
+    /// pattern; Schultz 2015 variable-ratio rationale).
+    ///
+    /// Caller (Scheduler) doesn't need to know which path ran — it gets back `[Tip]`
+    /// of length 1 (combo) or 3 (eye + neck-core + neck-aux), and the existing
+    /// FloatingReminderWindow already handles both.
     static func combinedEyeAndNeck() -> [Tip] {
-        [randomEyeTip()] + neckCombo()
+        // 15% classic fallback for format variety.
+        if Double.random(in: 0..<1) < 0.15 {
+            return [randomEyeTip()] + neckCombo()
+        }
+        return [randomComboTip()]
+    }
+}
+
+// MARK: - Recency-aware weighted selector
+
+/// Per-category ring buffer + weighted sampler.
+///
+/// Simple, explicit goal: never show the same tip twice within the last N fires of
+/// the same category, and when sampling, apply difficulty-based weights (easy tips
+/// get more weight in the first weeks of use; hard tips remain reachable).
+///
+/// In-memory only. On app restart the buffer resets — at worst this reintroduces
+/// one repeat, which is acceptable for MVP. Persistence is a future enhancement.
+final class TipSelector {
+    static let shared = TipSelector()
+
+    /// Ring buffer capacity per category. Chosen so recent N tips are excluded
+    /// while leaving ≥ pool.count - N candidates. For small pools (e.g. a
+    /// 3-index sedentary hour pref), this auto-clamps to pool.count - 1.
+    private let capacity: Int = 4
+
+    private var recent: [TipCategory: [String]] = [:]
+    private let lock = NSLock()
+
+    private init() {}
+
+    /// Pick a tip from `pool` using recency exclusion + weighted random.
+    /// Pool must be non-empty. Records the picked id into the ring buffer.
+    func pick(from pool: [Tip], category: TipCategory) -> Tip {
+        precondition(!pool.isEmpty, "TipSelector.pick called with empty pool")
+        lock.lock()
+        defer { lock.unlock() }
+
+        let excludeCount = max(0, min(capacity, pool.count - 1))
+        let buffer = recent[category] ?? []
+        let blocked = Set(buffer.suffix(excludeCount))
+
+        let candidates: [Tip]
+        if blocked.isEmpty {
+            candidates = pool
+        } else {
+            let filtered = pool.filter { !blocked.contains($0.id) }
+            candidates = filtered.isEmpty ? pool : filtered
+        }
+
+        // Weighted sampling: easy > medium > hard (progressive-unlock-lite).
+        // A fresh user's first sessions should default to easier moves; this
+        // avoids hard-coded gating while still biasing toward friendly onboarding.
+        let weights: [Double] = candidates.map { weight(for: $0) }
+        let chosen = weightedSample(candidates: candidates, weights: weights)
+
+        // Update ring buffer.
+        var newBuffer = buffer
+        newBuffer.append(chosen.id)
+        if newBuffer.count > capacity { newBuffer.removeFirst(newBuffer.count - capacity) }
+        recent[category] = newBuffer
+
+        return chosen
+    }
+
+    /// Reset buffer (for tests / debug).
+    func reset() {
+        lock.lock(); defer { lock.unlock() }
+        recent.removeAll()
+    }
+
+    private func weight(for tip: Tip) -> Double {
+        switch tip.difficulty {
+        case .easy:   return 1.0
+        case .medium: return 0.8
+        case .hard:   return 0.5
+        }
+    }
+
+    private func weightedSample(candidates: [Tip], weights: [Double]) -> Tip {
+        let total = weights.reduce(0, +)
+        guard total > 0 else { return candidates.randomElement()! }
+        var r = Double.random(in: 0..<total)
+        for (i, w) in weights.enumerated() {
+            if r < w { return candidates[i] }
+            r -= w
+        }
+        return candidates.last!
     }
 }

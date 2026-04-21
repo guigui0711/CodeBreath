@@ -147,7 +147,10 @@ final class SchedulerEngine: ObservableObject {
             return
         }
         let tips = ContentLibrary.combinedEyeAndNeck()
-        present(tips: tips, primaryCategory: "eye_neck")
+        // Track-level log label: "combo" when the selector produced a single
+        // compound move; "eye_neck" for the legacy 3-step fallback.
+        let primary = (tips.count == 1 && tips[0].kind == .compound) ? "combo" : "eye_neck"
+        present(tips: tips, primaryCategory: primary)
     }
 
     private func fireSedentary() {

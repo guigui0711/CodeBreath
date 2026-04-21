@@ -6,6 +6,7 @@ struct MenuBarView: View {
     @ObservedObject var storage: StorageManager
 
     var body: some View {
+        let _ = storage.logVersion  // observe log writes to refresh the counter
         let stats = storage.todayStats()
         HStack(spacing: 4) {
             Image(systemName: "lungs.fill")
