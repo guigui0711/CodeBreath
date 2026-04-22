@@ -79,7 +79,10 @@ final class SchedulerEngine: ObservableObject {
     }
 
     func triggerNow() {
-        fireEyeNeck()
+        // Manual trigger bypasses flow protection — user explicitly asked for it.
+        let tips = ContentLibrary.combinedEyeAndNeck()
+        let primary = (tips.count == 1 && tips[0].kind == .compound) ? "combo" : "eye_neck"
+        present(tips: tips, primaryCategory: primary)
     }
 
     // MARK: - Timer setup
