@@ -51,31 +51,36 @@ final class FloatingReminderController: NSObject, ReminderPresenter {
             self.viewModel = vm
 
             let rootView = FloatingReminderView(vm: vm)
+            // Full-screen overlay: panel covers the entire screen, rootView
+            // draws a dim backdrop and centers the 420×540 card itself.
+            let screen = NSScreen.main ?? NSScreen.screens.first!
+            let screenFrame = screen.frame
             let hosting = NSHostingView(rootView: rootView)
-            let size = NSSize(width: 420, height: 540)
-            hosting.frame = NSRect(origin: .zero, size: size)
+            hosting.frame = NSRect(origin: .zero, size: screenFrame.size)
 
             let panel = NSPanel(
-                contentRect: NSRect(origin: .zero, size: size),
+                contentRect: NSRect(origin: .zero, size: screenFrame.size),
                 styleMask: [.borderless, .nonactivatingPanel],
                 backing: .buffered,
                 defer: false
             )
             panel.isFloatingPanel = true
-            panel.level = .floating
-            panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+            // Above menu bar, dock, and even full-screen apps.
+            panel.level = NSWindow.Level(rawValue: Int(CGShieldingWindowLevel()))
+            panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
             panel.hidesOnDeactivate = false
-            panel.hasShadow = true
+            panel.hasShadow = false
             panel.isOpaque = false
             panel.backgroundColor = .clear
             panel.contentView = hosting
-            panel.isMovableByWindowBackground = true
+            panel.isMovableByWindowBackground = false
+            panel.ignoresMouseEvents = false
 
-            self.positionPanel(panel, position: position)
+            self.positionPanel(panel, screen: screen)
             panel.alphaValue = 0
             panel.orderFrontRegardless()
             NSAnimationContext.runAnimationGroup { ctx in
-                ctx.duration = 0.22
+                ctx.duration = 0.28
                 ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
                 panel.animator().alphaValue = 1
             }
@@ -117,18 +122,9 @@ final class FloatingReminderController: NSObject, ReminderPresenter {
         viewModel = nil
     }
 
-    private func positionPanel(_ panel: NSPanel, position: String) {
-        guard let screen = NSScreen.main else { return }
-        let vf = screen.visibleFrame
-        let size = panel.frame.size
-        let origin: NSPoint
-        switch position {
-        case "top-right":
-            origin = NSPoint(x: vf.maxX - size.width - 24, y: vf.maxY - size.height - 24)
-        default:
-            origin = NSPoint(x: vf.midX - size.width / 2, y: vf.midY - size.height / 2)
-        }
-        panel.setFrameOrigin(origin)
+    private func positionPanel(_ panel: NSPanel, screen: NSScreen) {
+        // Full-screen overlay: always cover the entire screen (including menu bar area).
+        panel.setFrame(screen.frame, display: true)
     }
 }
 
@@ -286,6 +282,20 @@ struct FloatingReminderView: View {
 
     var body: some View {
         ZStack {
+            // Full-screen dim backdrop so it feels like a true take-over.
+            Color.black.opacity(0.55)
+                .ignoresSafeArea()
+
+            card
+                .frame(width: 420, height: 540)
+                .shadow(color: .black.opacity(0.35), radius: 40, y: 12)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .animation(.easeInOut(duration: 0.2), value: vm.showingSkipReason)
+    }
+
+    private var card: some View {
+        ZStack {
             VisualEffectBackground()
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
                 .overlay(
@@ -332,8 +342,6 @@ struct FloatingReminderView: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.96)))
             }
         }
-        .frame(width: 420, height: 540)
-        .animation(.easeInOut(duration: 0.2), value: vm.showingSkipReason)
     }
 
     private var header: some View {
