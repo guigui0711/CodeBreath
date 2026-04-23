@@ -1016,14 +1016,8 @@ enum ContentLibrary {
     /// variety on the format itself (prevents combo from becoming the new habituated
     /// pattern; Schultz 2015 variable-ratio rationale).
     ///
-    /// Caller (Scheduler) doesn't need to know which path ran — it gets back `[Tip]`
-    /// of length 1 (combo) or 3 (eye + neck-core + neck-aux), and the existing
-    /// FloatingReminderWindow already handles both.
+    /// Caller gets back a single combo tip that covers both eye and neck.
     static func combinedEyeAndNeck() -> [Tip] {
-        // 15% classic fallback for format variety.
-        if Double.random(in: 0..<1) < 0.15 {
-            return [randomEyeTip()] + neckCombo()
-        }
         return [randomComboTip()]
     }
 }

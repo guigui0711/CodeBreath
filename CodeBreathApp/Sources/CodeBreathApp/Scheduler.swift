@@ -203,11 +203,17 @@ final class SchedulerEngine: ObservableObject {
         coalesceTimer = t
     }
 
+    private let maxStepsPerOverlay = 2
+
     private func flushCoalesced() {
-        let tips = coalesceBuffer
+        var tips = coalesceBuffer
         coalesceBuffer.removeAll()
         coalesceCategoryHints.removeAll()
         coalesceTimer = nil
+
+        if tips.count > maxStepsPerOverlay {
+            tips = Array(tips.prefix(maxStepsPerOverlay))
+        }
         guard !tips.isEmpty else { return }
 
         let now = Date()
