@@ -22,6 +22,15 @@ final class SchedulerEngine: ObservableObject {
     private var lastFireAt: Date?
     private let mergeWindowSeconds: TimeInterval = 60
 
+    // Coalesce reminders that fire within ~150ms of each other (e.g. eye+neck
+    // and sedentary timers landing on the same tick) into a single overlay,
+    // instead of racing through `appendIfVisible` (which loses tips because
+    // FloatingReminderController.present is async).
+    private var coalesceBuffer: [Tip] = []
+    private var coalesceCategoryHints: [String] = []
+    private var coalesceTimer: Timer?
+    private let coalesceWindow: TimeInterval = 0.15
+
     private var configCancellable: AnyCancellable?
     private var wakeObserver: NSObjectProtocol?
     private var sleepObserver: NSObjectProtocol?
@@ -181,23 +190,39 @@ final class SchedulerEngine: ObservableObject {
     }
 
     private func present(tips: [Tip], primaryCategory: String) {
-        let now = Date()
+        // Coalesce: if another reminder fires within `coalesceWindow`, batch
+        // them together so the overlay shows N back-to-back steps instead of
+        // racing the async panel creation.
+        coalesceBuffer.append(contentsOf: tips)
+        coalesceCategoryHints.append(primaryCategory)
+        coalesceTimer?.invalidate()
+        let t = Timer(timeInterval: coalesceWindow, repeats: false) { [weak self] _ in
+            self?.flushCoalesced()
+        }
+        RunLoop.main.add(t, forMode: .common)
+        coalesceTimer = t
+    }
 
-        // Log each tip as notified.
+    private func flushCoalesced() {
+        let tips = coalesceBuffer
+        coalesceBuffer.removeAll()
+        coalesceCategoryHints.removeAll()
+        coalesceTimer = nil
+        guard !tips.isEmpty else { return }
+
+        let now = Date()
         for t in tips {
             storage.append(event: LogEvent(timestamp: now, category: t.category.rawValue, tipName: t.name.en, action: "notified"))
         }
 
-        // Merge: if a window is already visible and within merge window, append steps.
-        let merged: Bool
+        // If a previous overlay is still on-screen and within the merge
+        // window, append to it; otherwise present a fresh overlay.
         if let last = lastFireAt, now.timeIntervalSince(last) < mergeWindowSeconds,
            presenter?.appendIfVisible(tips: tips) == true {
-            merged = true
-        } else {
-            merged = false
+            lastFireAt = now
+            return
         }
         lastFireAt = now
-        if merged { return }
 
         let locale = storage.config.locale
         let position = storage.config.floatingWindowPosition
