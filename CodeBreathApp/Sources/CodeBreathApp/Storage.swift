@@ -114,7 +114,7 @@ final class StorageManager: ObservableObject {
             let day = cal.date(byAdding: .day, value: -i, to: Date()) ?? Date()
             let events = loadEvents(at: logURL(for: day))
             let completed = events.filter { $0.action == "completed" }.count
-            let skipped = events.filter { $0.action == "skipped" }.count
+            let skipped = events.filter { $0.action.hasPrefix("skipped") }.count
             let total = completed + skipped
             result.append(total == 0 ? 0 : Double(completed) / Double(total))
         }
@@ -158,7 +158,8 @@ final class StorageManager: ObservableObject {
             var bucket = stats.byCategory[ev.category] ?? (0, 0)
             switch ev.action {
             case "completed": stats.completed += 1; bucket.completed += 1
-            case "skipped":   stats.skipped   += 1; bucket.skipped   += 1
+            case _ where ev.action.hasPrefix("skipped"):
+                stats.skipped += 1; bucket.skipped += 1
             default: break
             }
             stats.byCategory[ev.category] = bucket
