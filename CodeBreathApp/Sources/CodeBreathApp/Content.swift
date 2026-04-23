@@ -1,7 +1,5 @@
 // Content library for CodeBreath.
-// Counts: 5 eye tips, 3 neck core + 3 neck auxiliary (6 total), 7 sedentary breaks,
-// 1 noon outdoor tip, 7 eye extra benefits, 7 eye extra consequences, 5 noon extra messages.
-// Bilingual (en/zh). Ported from codebreath/content.py and codebreath/i18n.py.
+// Bilingual (en/zh). All exercises are office-friendly (no wall, doorframe, or squat moves).
 
 import Foundation
 
@@ -489,40 +487,16 @@ enum ContentLibrary {
             tags: ["ROM"]
         ),
         Tip(
-            id: "neck.wall_angel",
-            name: LocalizedText(en: "Wall Angels", zh: "靠墙天使"),
+            id: "neck.seated_pec_stretch",
+            name: LocalizedText(en: "Seated Pec Stretch", zh: "坐姿开胸拉伸"),
             instruction: LocalizedText(
-                en: "Stand with back against wall, heels 10cm out. Press lower back, upper back, and head to wall. Arms up in \"goalpost\" shape, slide up and down slowly 8 times.",
-                zh: "背靠墙站，脚后跟离墙 10 厘米。腰、上背、后脑贴墙。双臂举成「门框」形，沿墙慢慢上下滑动 8 次。"
-            ),
-            durationSeconds: 60,
-            benefit: LocalizedText(
-                en: "Activates mid/lower trapezius and rhomboids while mobilizing the thoracic spine — full upper-body posture reset.",
-                zh: "激活中下斜方肌和菱形肌，同时松动胸椎——上半身姿态完整重置。"
-            ),
-            consequence: LocalizedText(
-                en: "Without mid/lower trap activation, upper trap dominates — the classic \"turtle neck + rounded shoulder\" posture.",
-                zh: "缺少中下斜方肌激活，上斜方肌代偿——典型的「乌龟颈 + 圆肩」。"
-            ),
-            category: .neck,
-            source: LocalizedText(
-                en: "Modern shoulder rehab protocol (scapular stabilization)",
-                zh: "现代肩部康复方案（肩胛骨稳定性训练）"
-            ),
-            difficulty: .medium,
-            tags: ["FHP", "ROM"]
-        ),
-        Tip(
-            id: "neck.doorway_pec_stretch",
-            name: LocalizedText(en: "Doorway Pec Stretch", zh: "门框胸肌拉伸"),
-            instruction: LocalizedText(
-                en: "Stand in a doorway. Place forearms on the doorframe at shoulder height. Step one foot forward and lean gently until you feel a chest stretch. Hold 30 s.",
-                zh: "站在门框前，两前臂贴门框，肘部与肩同高。迈出一只脚，身体前倾直到感觉胸部拉伸，保持 30 秒。"
+                en: "Sit upright. Clasp hands behind your back, straighten arms, squeeze shoulder blades together, and lift hands slightly. Hold 20s. Repeat twice.",
+                zh: "坐直，双手在背后十指交扣，手臂伸直，肩胛骨夹紧，双手微微上抬。保持 20 秒，重复 2 次。"
             ),
             durationSeconds: 45,
             benefit: LocalizedText(
-                en: "Opens the anterior chest (pec minor/major) — the root cause of rounded shoulders that drive forward head posture.",
-                zh: "打开胸前肌群（胸小肌/胸大肌）——圆肩的根源，进而引发头前伸。"
+                en: "Opens the anterior chest (pec minor/major) without leaving your chair — addresses the root cause of rounded shoulders.",
+                zh: "不离开椅子就能打开胸前肌群（胸小肌/胸大肌）——解决圆肩的根源。"
             ),
             consequence: LocalizedText(
                 en: "Tight pecs pull the shoulders forward, locking the thoracic spine in kyphosis and forcing neck compensation.",
@@ -530,8 +504,8 @@ enum ContentLibrary {
             ),
             category: .neck,
             source: LocalizedText(
-                en: "Standard PT pec minor stretch for FHP correction",
-                zh: "矫正头前伸的标准胸小肌拉伸"
+                en: "Standard PT seated pec stretch for FHP correction",
+                zh: "矫正头前伸的坐姿胸肌拉伸"
             ),
             difficulty: .easy,
             tags: ["FHP"]
@@ -596,20 +570,20 @@ enum ContentLibrary {
             category: .sedentary
         ),
         Tip(
-            id: "sed.squats",
-            name: LocalizedText(en: "10 Bodyweight Squats", zh: "10 个深蹲"),
+            id: "sed.seated_cat_cow",
+            name: LocalizedText(en: "Seated Cat-Cow", zh: "坐姿猫牛式"),
             instruction: LocalizedText(
-                en: "Stand up and do 10 slow bodyweight squats (3 seconds down, 1 second up).",
-                zh: "站起来做 10 个慢速深蹲（3 秒下蹲，1 秒起立）。"
+                en: "Sit at the edge of your chair. Inhale: arch your back, chest forward, look slightly up. Exhale: round your back, tuck chin. Repeat 8 times slowly.",
+                zh: "坐到椅子前沿。吸气：挺胸抬头微微向上看。呼气：弓背收下巴。慢慢重复 8 次。"
             ),
-            durationSeconds: 60,
+            durationSeconds: 40,
             benefit: LocalizedText(
-                en: "Activates the body's largest muscle groups (quads + glutes). Rapidly boosts heart rate and metabolism.",
-                zh: "激活身体最大肌群（股四头肌 + 臀肌）。快速提升心率和代谢。"
+                en: "Mobilizes the entire spine segment by segment. Relieves lumbar compression from prolonged sitting without standing up.",
+                zh: "逐节松动整条脊柱。不用起身就能缓解久坐导致的腰椎压迫。"
             ),
             consequence: LocalizedText(
-                en: "Lower body muscles atrophy from disuse, basal metabolic rate drops.",
-                zh: "下肢肌肉因废用而萎缩，基础代谢率下降。"
+                en: "Spinal segments stiffen into a single rigid block — movement patterns degrade and disc nutrition drops.",
+                zh: "脊柱各节段僵化成一整块——运动模式退化，椎间盘营养供给下降。"
             ),
             category: .sedentary
         ),
@@ -632,20 +606,20 @@ enum ContentLibrary {
             category: .sedentary
         ),
         Tip(
-            id: "sed.wall_stand",
-            name: LocalizedText(en: "Wall Stand (1 min)", zh: "靠墙站 1 分钟"),
+            id: "sed.ankle_circles",
+            name: LocalizedText(en: "Ankle Circles", zh: "脚踝画圈"),
             instruction: LocalizedText(
-                en: "Stand with your back against a wall: back of head, shoulder blades, butt, and heels all touching the wall. Hold 1 minute.",
-                zh: "背靠墙站：后脑勺、肩胛骨、臀部、脚后跟都贴墙。保持 1 分钟。"
+                en: "Lift one foot slightly off the floor. Draw slow circles with your ankle — 10 clockwise, 10 counter-clockwise. Switch foot.",
+                zh: "一只脚稍微抬离地面，用脚踝慢慢画圈——顺时针 10 圈，逆时针 10 圈。换脚。"
             ),
-            durationSeconds: 60,
+            durationSeconds: 50,
             benefit: LocalizedText(
-                en: "Resets correct posture alignment. Corrects rounded shoulders and forward head in one move.",
-                zh: "重置正确体态。一个动作同时矫正圆肩和头前伸。"
+                en: "Activates the calf pump for venous return and keeps ankle joints mobile — all under the desk, invisible to others.",
+                zh: "激活小腿泵促进静脉回流，保持踝关节灵活——在桌下完成，完全不引人注意。"
             ),
             consequence: LocalizedText(
-                en: "Poor posture becomes your default. Your body literally forgets what 'straight' feels like.",
-                zh: "错误姿势变成你的默认设定。身体会真的忘记「直」是什么感觉。"
+                en: "Ankle stiffness + poor venous return from sitting → swollen feet by afternoon.",
+                zh: "踝关节僵硬 + 久坐静脉回流差 → 下午脚肿。"
             ),
             category: .sedentary
         ),
@@ -674,8 +648,8 @@ enum ContentLibrary {
     private static let sedentaryTimePreferences: [(hours: Range<Int>, indices: [Int])] = [
         (9..<11,  [0, 1, 2]),  // Morning: hydration focus
         (11..<12, [0, 4, 1]),  // Pre-lunch
-        (13..<15, [3, 6, 1]),  // Post-lunch drowsiness (energizing)
-        (15..<17, [5, 2, 3]),  // Afternoon
+        (13..<15, [3, 6, 1]),  // Post-lunch (seated cat-cow, calf raises — energizing)
+        (15..<17, [5, 2, 3]),  // Afternoon (ankle circles, standing stretch, cat-cow)
         (17..<20, [1, 0, 6]),  // Late afternoon
     ]
 
@@ -906,31 +880,6 @@ enum ContentLibrary {
             difficulty: .medium,
             kind: .compound,
             tags: ["FHP", "ROM", "saccade"]
-        ),
-        Tip(
-            id: "combo.wall_saccades",
-            name: LocalizedText(en: "Wall-Stand Horizontal Saccades", zh: "靠墙站 + 水平扫视"),
-            instruction: LocalizedText(
-                en: "Stand with back against wall — head, shoulders, butt, heels all touching. Hold head perfectly still; snap gaze between two targets ~1m apart horizontally, 20 shifts.",
-                zh: "背靠墙站——后脑、肩胛、臀、脚后跟都贴墙。头绝对不动，眼睛在约 1 米间距的两个水平目标间快速切换 20 次。"
-            ),
-            durationSeconds: 50,
-            benefit: LocalizedText(
-                en: "Full postural reset + saccadic training. Also builds head-eye dissociation — the skill of moving eyes without neck compensating.",
-                zh: "全身姿态重置 + 扫视训练。还训练头-眼分离——眼睛独立动而不用脖子代偿。"
-            ),
-            consequence: LocalizedText(
-                en: "Users who can't hold head-still while moving eyes have lost head-eye dissociation — a hidden driver of neck strain.",
-                zh: "头动则眼动、不能分离的人，头-眼分离能力已丢——颈椎劳损的隐藏推手。"
-            ),
-            category: .combo,
-            source: LocalizedText(
-                en: "Existing wall-stand (app) + Scheiman & Wick 2019 saccade training",
-                zh: "本 app 靠墙站 + Scheiman & Wick 2019 扫视训练"
-            ),
-            difficulty: .hard,
-            kind: .compound,
-            tags: ["saccade", "posture", "activating"]
         ),
     ]
 
